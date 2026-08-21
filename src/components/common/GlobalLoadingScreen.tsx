@@ -30,14 +30,16 @@ export const GlobalLoadingScreen: React.FC<GlobalLoadingScreenProps> = ({
       setProgress(combined);
     };
 
-    // 1. Preload GIF Asset
+    // 1. Preload Responsive GIF Asset
+    const isMobileDevice = typeof window !== 'undefined' && window.innerWidth <= 768;
+    const targetGif = isMobileDevice ? '/assets/ascii_landing_mobile.gif' : '/assets/ascii_landing_desktop.gif';
     const img = new Image();
-    img.src = '/assets/ascii_landing.gif';
+    img.src = targetGif;
     img.onload = () => {
       gifLoaded = true;
       gifProgress = 100;
       updateAggregatedProgress();
-      setStatusText('ASCII VISUALS SYNCHRONIZED');
+      setStatusText(isMobileDevice ? 'MOBILE MATRIX SYNCHRONIZED' : 'DESKTOP MATRIX SYNCHRONIZED');
     };
     img.onerror = () => {
       gifLoaded = true;

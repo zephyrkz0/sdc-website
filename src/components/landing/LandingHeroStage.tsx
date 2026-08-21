@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { playCyberClick } from '../common/AudioEffects';
@@ -15,6 +15,16 @@ export const LandingHeroStage: React.FC<LandingHeroStageProps> = ({
   mobileGifUrl = '/assets/ascii_landing_mobile.gif',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -41,6 +51,8 @@ export const LandingHeroStage: React.FC<LandingHeroStageProps> = ({
     }
   };
 
+  const currentGifSrc = isMobile ? mobileGifUrl : desktopGifUrl;
+
   return (
     <motion.section
       ref={containerRef}
@@ -53,13 +65,14 @@ export const LandingHeroStage: React.FC<LandingHeroStageProps> = ({
         className="absolute inset-0 z-0 overflow-hidden flex items-center justify-center bg-black"
       >
         <picture className="w-full h-full">
-          {/* Mobile Viewport: loads mobile specific GIF */}
+          {/* Mobile Viewport: loads mobile.gif */}
           <source media="(max-width: 768px)" srcSet={mobileGifUrl} />
-          {/* Desktop/Tablet/Widescreen: loads widescreen desktop GIF */}
+          {/* Desktop/Tablet/Widescreen: loads desktop widescreen GIF */}
           <source media="(min-width: 769px)" srcSet={desktopGifUrl} />
           {/* Fallback Image */}
           <img
-            src={desktopGifUrl}
+            key={currentGifSrc}
+            src={currentGifSrc}
             alt="SDC Pixelated Visual"
             className="w-full h-full object-cover object-center pointer-events-none"
           />
