@@ -61,26 +61,15 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#08080a]/90 backdrop-blur-md border-b border-zinc-800/80">
-      {/* Top Telemetry Marquee Banner */}
-      <div className="hidden lg:flex items-center justify-between px-4 py-1 bg-zinc-950 border-b border-zinc-900 font-mono text-[9px] text-zinc-500 overflow-hidden select-none">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-            OPERATIONAL_STATUS: NOMINAL
-          </span>
-          <span>//</span>
-          <span>PROTOCOL: SDC_V2.6_PROD</span>
-          <span>//</span>
-          <span>ENCRYPTION: 4096_BIT_RSA</span>
+      {/* Top Minimal Status Strip */}
+      <div className="hidden lg:flex items-center justify-between px-6 py-1 bg-zinc-950 border-b border-zinc-900 font-mono text-[10px] text-zinc-500 overflow-hidden select-none">
+        <div className="flex items-center gap-2 text-zinc-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span>SKILL DEVELOPMENT CLUB</span>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            <span className="text-zinc-400">NODE_TIME:</span>
-            <span className="text-white font-bold">{timeStr} UTC</span>
-          </div>
-          <span>//</span>
-          <span className="text-zinc-400">LATENCY: 14MS</span>
+        <div className="flex items-center gap-4 text-zinc-500">
+          <span className="text-zinc-400">{timeStr} UTC</span>
         </div>
       </div>
 

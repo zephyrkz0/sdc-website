@@ -57,9 +57,9 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({ members }) => 
       <section>
         <BlueprintHeader
           stepNumber="02"
-          tag="PERSONNEL_ROSTER"
-          title="COMMAND TIER // CORE COUNCIL"
-          subtitle="Founders, Executive Committee leads, and lead domain architects orchestrating club curricula and technical operations."
+          tag="PERSONNEL"
+          title="LEADERSHIP COUNCIL"
+          subtitle="Founders, Executive Committee leads, and lead domain architects."
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -77,13 +77,12 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({ members }) => 
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-zinc-800">
           <div>
-            <div className="font-mono text-[10px] text-zinc-500">// DATABASE_VIEW</div>
             <h3 className="text-2xl sm:text-3xl font-black font-syne text-white uppercase tracking-tight">
-              ACTIVE OPERATIVES MATRIX
+              MEMBER DIRECTORY
             </h3>
           </div>
           <div className="font-mono text-xs text-zinc-400">
-            TOTAL ACTIVE: <span className="text-white font-bold">{filteredOperatives.length}</span> OPERATIVES
+            TOTAL MEMBERS: <span className="text-white font-bold">{filteredOperatives.length}</span>
           </div>
         </div>
 

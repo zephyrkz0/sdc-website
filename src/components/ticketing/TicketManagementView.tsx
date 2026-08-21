@@ -45,23 +45,19 @@ export const TicketManagementView: React.FC<TicketManagementViewProps> = ({
       {/* SECTION HEADER */}
       <BlueprintHeader
         stepNumber="05"
-        tag="ACCESS_TICKETING_HUB"
-        title="EVENT RSVP & HOLOGRAPHIC PASSES"
-        subtitle="Dynamic physical pass generation, encrypted scannable check-in QR codes, and local PDF/PNG ticket export system."
+        tag="PASSES"
+        title="EVENT TICKETING & PASSES"
+        subtitle="Digital pass generation with scannable QR verification and local PDF export."
       />
 
       {/* TOP ACTION MATRIX */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center bg-zinc-950 border border-zinc-800 p-6 tech-corner-box">
-        <div className="md:col-span-8 space-y-2">
-          <div className="flex items-center gap-2">
-            <ChromeBadge label="ISSUANCE_ENGINE" variant="silver" />
-            <ChromeBadge label="SHA-256 ENCRYPTED" variant="dark" />
-          </div>
+        <div className="md:col-span-8 space-y-2 font-mono">
           <h3 className="font-syne font-black text-2xl text-white uppercase">
-            MINT OFFICIAL SDC BOARDING PASSES
+            SDC EVENT PASSES
           </h3>
-          <p className="font-mono text-xs text-zinc-400">
-            Every pass is issued with a unique cryptographic check-in payload, serialized barcode, and custom holographic foil reflection.
+          <p className="text-xs text-zinc-400">
+            Generate your personalized physical ticket pass with unique QR check-in codes for club summits and workshops.
           </p>
         </div>
 

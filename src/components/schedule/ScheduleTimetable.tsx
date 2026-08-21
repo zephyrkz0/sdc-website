@@ -47,9 +47,9 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
       {/* SECTION HEADER */}
       <BlueprintHeader
         stepNumber="03"
-        tag="OPERATIONAL_ITINERARY"
-        title="SCHEDULE & TIMETABLE MATRIX"
-        subtitle="Chronological breakdown of hands-on technical sessions, deep dives, war-games, and flagship hackathons."
+        tag="ITINERARY"
+        title="SCHEDULE & ITINERARY"
+        subtitle="Upcoming technical workshops, coding sprints, and hackathons."
       />
 
       {/* Filter and Search Bar */}

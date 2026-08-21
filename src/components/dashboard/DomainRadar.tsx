@@ -56,12 +56,9 @@ export const DomainRadar: React.FC<DomainRadarProps> = ({ stats }) => {
       </div>
 
       {/* Bottom Technical Telemetry */}
-      <div className="mt-6 pt-4 border-t border-zinc-900 flex flex-wrap items-center justify-between gap-2 font-mono text-[9px] text-zinc-500">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-          <span>CURRICULUM_SYNC: 100% COMPLETE</span>
-        </div>
-        <span>ALGORITHM: WEIGHTED_PEER_REVIEW_V4</span>
+      <div className="mt-6 pt-4 border-t border-zinc-900 flex items-center justify-between font-mono text-[10px] text-zinc-500">
+        <span className="text-zinc-400">ACTIVE TRACKS: 5</span>
+        <span className="text-zinc-400">UPDATED WEEKLY</span>
       </div>
     </div>
   );

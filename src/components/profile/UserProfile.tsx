@@ -82,9 +82,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       {/* SECTION HEADER */}
       <BlueprintHeader
         stepNumber="04"
-        tag="OPERATIVE_ID_SYS"
-        title="INDIVIDUAL OPERATIVE DASHBOARD"
-        subtitle="Personalized hub managing your verified club identity, physical 3D pass, skill telemetry, and portfolio deployments."
+        tag="PROFILE"
+        title="MEMBER PROFILE"
+        subtitle="Manage your club identity, digital pass, and project portfolio."
       />
 
       {/* TOP GRID: 3D ID CARD & PERSONAL TELEMETRY */}

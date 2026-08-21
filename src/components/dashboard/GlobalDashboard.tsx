@@ -135,13 +135,6 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
                   interactive={true}
                   className="w-full h-full"
                 />
-                
-                {/* Overlay Holographic Stamp */}
-                <div className="absolute top-4 right-4 pointer-events-none">
-                  <div className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center font-mono text-[8px] text-white rotate-12">
-                    TRIPO 3D
-                  </div>
-                </div>
               </div>
             </div>
           </div>
