@@ -1,0 +1,265 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-syne: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-gothic: 'UnifrakturMaguntia', cursive;
+    --font-cinzel: 'Cinzel Decorative', serif;
+    --font-grotesk: 'Space Grotesk', sans-serif;
+    --font-sans: 'Inter', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #08080a;
+    color: #e4e4e7;
+    cursor: default;
+  }
+}
+
+/* Acubi Typography Utilities */
+.font-syne {
+  font-family: var(--font-syne);
+}
+.font-mono {
+  font-family: var(--font-mono);
+}
+.font-gothic {
+  font-family: var(--font-gothic);
+}
+.font-cinzel {
+  font-family: var(--font-cinzel);
+}
+.font-grotesk {
+  font-family: var(--font-grotesk);
+}
+
+/* Chrome Metallic Gradients & Shimmers */
+.chrome-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 25%, #64748b 50%, #f1f5f9 75%, #334155 100%);
+}
+
+.chrome-text {
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 30%, #94a3b8 50%, #ffffff 70%, #64748b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.chrome-text-silver {
+  background: linear-gradient(180deg, #ffffff 0%, #a1a1aa 45%, #e4e4e7 55%, #71717a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.chrome-border {
+  border-image: linear-gradient(135deg, #ffffff, #71717a, #ffffff, #3f3f46) 1;
+}
+
+.chrome-plate {
+  background: linear-gradient(145deg, #18181b 0%, #09090b 40%, #1f2023 70%, #0f1013 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+}
+
+.chrome-plate-light {
+  background: linear-gradient(145deg, #e4e4e7 0%, #d4d4d8 50%, #f4f4f5 100%);
+  border: 1px solid #ffffff;
+  color: #09090b;
+}
+
+/* Holographic Foil Reflection */
+.holo-foil {
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(147, 197, 253, 0.2) 40%,
+    rgba(244, 114, 182, 0.2) 50%,
+    rgba(167, 139, 250, 0.2) 60%,
+    rgba(255, 255, 255, 0.05) 75%,
+    transparent 100%
+  );
+  background-size: 200% 200%;
+  animation: holoShift 8s ease infinite;
+}
+
+.holo-foil-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.holo-foil-sheen::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.15) 45%,
+    rgba(224, 231, 255, 0.3) 50%,
+    rgba(243, 232, 255, 0.2) 55%,
+    transparent 65%
+  );
+  transform: rotate(25deg);
+  pointer-events: none;
+  opacity: 0.6;
+  animation: sheenSlide 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes holoShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes sheenSlide {
+  0% { transform: translateY(-100%) rotate(25deg); }
+  40% { transform: translateY(100%) rotate(25deg); }
+  100% { transform: translateY(100%) rotate(25deg); }
+}
+
+/* Blueprint & Technical Grid Backgrounds */
+.bg-blueprint-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+}
+
+.bg-dot-matrix {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 0);
+  background-size: 16px 16px;
+}
+
+.bg-scanline {
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.03),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.03)
+  );
+  background-size: 100% 3px, 6px 100%;
+}
+
+/* Photocopy Noise Texture Simulation */
+.photocopy-noise {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 0);
+  background-size: 4px 4px;
+}
+
+/* Technical Manual Borders and Corner Crosshairs */
+.tech-corner-box {
+  position: relative;
+}
+
+.tech-corner-box::before,
+.tech-corner-box::after {
+  content: '+';
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+.tech-corner-box::before {
+  top: -6px;
+  left: -5px;
+}
+
+.tech-corner-box::after {
+  bottom: -6px;
+  right: -5px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #08080a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 0px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Barcode simulation pattern */
+.barcode-strip {
+  background: repeating-linear-gradient(
+    90deg,
+    #fff,
+    #fff 2px,
+    transparent 2px,
+    transparent 4px,
+    #fff 4px,
+    #fff 7px,
+    transparent 7px,
+    transparent 9px,
+    #fff 9px,
+    #fff 10px,
+    transparent 10px,
+    transparent 13px
+  );
+}
+
+.barcode-strip-dark {
+  background: repeating-linear-gradient(
+    90deg,
+    #000,
+    #000 2px,
+    transparent 2px,
+    transparent 4px,
+    #000 4px,
+    #000 7px,
+    transparent 7px,
+    transparent 9px,
+    #000 9px,
+    #000 10px,
+    transparent 10px,
+    transparent 13px
+  );
+}
+
+/* Marquee Animations */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* CRT Screen Flicker */
+@keyframes flicker {
+  0% { opacity: 0.98; }
+  50% { opacity: 1; }
+  100% { opacity: 0.97; }
+}
+
+.crt-flicker {
+  animation: flicker 0.15s infinite;
+}
