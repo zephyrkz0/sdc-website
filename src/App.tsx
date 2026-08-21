@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavTab, Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
-import { CustomCursor } from './components/common/CustomCursor';
+import { TargetCursor } from './components/common/TargetCursor';
 import { GlobalDashboard } from './components/dashboard/GlobalDashboard';
 import { MemberDirectory } from './components/roster/MemberDirectory';
 import { ScheduleTimetable } from './components/schedule/ScheduleTimetable';
@@ -97,8 +97,15 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#08080a] text-zinc-100 relative selection:bg-white selection:text-black">
-      {/* Custom Crosshair Cursor with trailing dynamics */}
-      <CustomCursor />
+      {/* TargetCursor component from React Bits */}
+      <TargetCursor
+        spinDuration={2}
+        hideDefaultCursor={true}
+        parallaxOn={true}
+        cursorColor="#ffffff"
+        cursorColorOnTarget="#c084fc"
+        targetSelector=".cursor-target, button, a, input, select, textarea, [data-interactive='true'], .interactive-card, .tab-btn"
+      />
 
       {/* Navigation Header */}
       <Navbar
