@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavTab, Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { TargetCursor } from './components/common/TargetCursor';
+import { FaultyTerminal } from './components/common/FaultyTerminal';
 import { GlobalDashboard } from './components/dashboard/GlobalDashboard';
 import { MemberDirectory } from './components/roster/MemberDirectory';
 import { ScheduleTimetable } from './components/schedule/ScheduleTimetable';
@@ -96,7 +97,32 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#08080a] text-zinc-100 relative selection:bg-white selection:text-black">
+    <div className="min-h-screen bg-[#08080a] text-zinc-100 relative selection:bg-white selection:text-black overflow-x-hidden">
+      {/* FaultyTerminal React Bits WebGL Background */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-35">
+        <FaultyTerminal
+          scale={1.4}
+          gridMul={[2, 1]}
+          digitSize={1.3}
+          timeScale={0.35}
+          pause={false}
+          scanlineIntensity={0.6}
+          glitchAmount={1.1}
+          flickerAmount={0.8}
+          noiseAmp={0.5}
+          chromaticAberration={1.5}
+          dither={1}
+          curvature={0.12}
+          tint="#d8b4fe"
+          mouseReact={true}
+          mouseStrength={0.35}
+          pageLoadAnimation={true}
+          brightness={0.8}
+        />
+        {/* Subtle radial vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(8,8,10,0.7)_100%)] pointer-events-none" />
+      </div>
+
       {/* TargetCursor component from React Bits */}
       <TargetCursor
         spinDuration={2}
@@ -108,15 +134,17 @@ export const App: React.FC = () => {
       />
 
       {/* Navigation Header */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenScanner={() => setScannerModalOpen(true)}
-        onOpenRSVP={() => handleOpenRSVP()}
-      />
+      <div className="relative z-20">
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenScanner={() => setScannerModalOpen(true)}
+          onOpenRSVP={() => handleOpenRSVP()}
+        />
+      </div>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
         {activeTab === 'dashboard' && (
           <GlobalDashboard
             stats={GLOBAL_STATS}
