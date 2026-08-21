@@ -144,8 +144,8 @@ export const App: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
-        {activeTab === 'dashboard' && (
+      {activeTab === 'dashboard' ? (
+        <div className="relative z-10">
           <GlobalDashboard
             stats={GLOBAL_STATS}
             logs={logs}
@@ -154,35 +154,37 @@ export const App: React.FC = () => {
             onOpenRSVP={handleOpenRSVP}
             onOpenScanner={() => setScannerModalOpen(true)}
           />
-        )}
+        </div>
+      ) : (
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
+          {activeTab === 'roster' && (
+            <MemberDirectory members={members} />
+          )}
 
-        {activeTab === 'roster' && (
-          <MemberDirectory members={members} />
-        )}
+          {activeTab === 'schedule' && (
+            <ScheduleTimetable
+              sessions={sessions}
+              onRSVP={handleOpenRSVP}
+            />
+          )}
 
-        {activeTab === 'schedule' && (
-          <ScheduleTimetable
-            sessions={sessions}
-            onRSVP={handleOpenRSVP}
-          />
-        )}
+          {activeTab === 'profile' && (
+            <UserProfile
+              userProfile={userProfile}
+              onUpdateProfile={handleUpdateProfile}
+            />
+          )}
 
-        {activeTab === 'profile' && (
-          <UserProfile
-            userProfile={userProfile}
-            onUpdateProfile={handleUpdateProfile}
-          />
-        )}
-
-        {activeTab === 'tickets' && (
-          <TicketManagementView
-            tickets={tickets}
-            events={events}
-            onOpenRSVP={handleOpenRSVP}
-            onOpenScanner={() => setScannerModalOpen(true)}
-          />
-        )}
-      </main>
+          {activeTab === 'tickets' && (
+            <TicketManagementView
+              tickets={tickets}
+              events={events}
+              onOpenRSVP={handleOpenRSVP}
+              onOpenScanner={() => setScannerModalOpen(true)}
+            />
+          )}
+        </main>
+      )}
 
       {/* Global Modals */}
       <EventRSVPModal
