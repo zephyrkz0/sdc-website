@@ -5,9 +5,15 @@ import { playCyberClick } from '../common/AudioEffects';
 
 interface LandingHeroStageProps {
   onEnter?: () => void;
+  desktopGifUrl?: string;
+  mobileGifUrl?: string;
 }
 
-export const LandingHeroStage: React.FC<LandingHeroStageProps> = ({ onEnter }) => {
+export const LandingHeroStage: React.FC<LandingHeroStageProps> = ({
+  onEnter,
+  desktopGifUrl = '/assets/ascii_landing_desktop.gif',
+  mobileGifUrl = '/assets/ascii_landing_mobile.gif',
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -41,23 +47,30 @@ export const LandingHeroStage: React.FC<LandingHeroStageProps> = ({ onEnter }) =
       style={{ opacity }}
       className="relative w-full h-[calc(100vh-4rem)] min-h-[550px] flex items-center justify-center overflow-hidden select-none"
     >
-      {/* PURE UNINTERRUPTED FULLSCREEN PIXELATED GIF */}
+      {/* PURE UNINTERRUPTED RESPONSIVE FULLSCREEN PIXELATED GIF */}
       <motion.div
         style={{ scale, y, filter: blurValue }}
         className="absolute inset-0 z-0 overflow-hidden flex items-center justify-center bg-black"
       >
-        <img
-          src="/assets/ascii_landing.gif"
-          alt="SDC Pixelated Visual"
-          className="w-full h-full object-cover object-center pointer-events-none"
-        />
+        <picture className="w-full h-full">
+          {/* Mobile Viewport: loads mobile specific GIF */}
+          <source media="(max-width: 768px)" srcSet={mobileGifUrl} />
+          {/* Desktop/Tablet/Widescreen: loads widescreen desktop GIF */}
+          <source media="(min-width: 769px)" srcSet={desktopGifUrl} />
+          {/* Fallback Image */}
+          <img
+            src={desktopGifUrl}
+            alt="SDC Pixelated Visual"
+            className="w-full h-full object-cover object-center pointer-events-none"
+          />
+        </picture>
       </motion.div>
 
-      {/* Sleek Minimal Floating Scroll Indicator at bottom */}
+      {/* Minimal Floating Scroll Indicator at bottom */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
         <button
           onClick={handleScrollDown}
-          className="group flex flex-col items-center gap-1 font-mono text-[10px] tracking-widest text-white/80 hover:text-white transition-all cursor-pointer bg-black/60 px-4 py-1.5 border border-white/20 hover:border-white backdrop-blur-md"
+          className="group flex flex-col items-center gap-1 font-mono text-[10px] tracking-widest text-white/80 hover:text-white transition-all cursor-pointer bg-black/60 px-4 py-1.5 border border-white/20 hover:border-white backdrop-blur-md cursor-target"
         >
           <span className="uppercase font-bold tracking-widest">SCROLL DOWN</span>
           <ChevronDown size={14} className="animate-bounce text-white group-hover:translate-y-0.5 transition-transform" />

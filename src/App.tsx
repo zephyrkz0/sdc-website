@@ -10,6 +10,7 @@ import { UserProfile } from './components/profile/UserProfile';
 import { TicketManagementView } from './components/ticketing/TicketManagementView';
 import { EventRSVPModal } from './components/ticketing/EventRSVPModal';
 import { TicketScannerModal } from './components/ticketing/TicketScannerModal';
+import { GlobalLoadingScreen } from './components/common/GlobalLoadingScreen';
 import {
   GLOBAL_STATS,
   CLUB_MEMBERS,
@@ -98,6 +99,9 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#08080a] text-zinc-100 relative selection:bg-white selection:text-black overflow-x-hidden">
+      {/* Global Preloading Screen matching Acubi Aesthetic */}
+      <GlobalLoadingScreen minDurationMs={1200} />
+
       {/* FaultyTerminal React Bits WebGL Background */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-35">
         <FaultyTerminal
