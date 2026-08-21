@@ -5,7 +5,8 @@ import { GlobalClubStats, TerminalLog, ClubEvent } from '../../types';
 import { StatCounter } from './StatCounter';
 import { DomainRadar } from './DomainRadar';
 import { BlueprintManual } from './BlueprintManual';
-import { ChromeOrbScene } from '../3d/ChromeOrbScene';
+import { GlbModelViewer } from '../3d/GlbModelViewer';
+import { LandingHeroStage } from '../landing/LandingHeroStage';
 import { BlueprintHeader } from '../common/BlueprintHeader';
 import { ChromeBadge } from '../common/ChromeBadge';
 import { playCyberClick } from '../common/AudioEffects';
@@ -28,10 +29,20 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
   onOpenRSVP,
   onOpenScanner,
 }) => {
+  const handleEnterPlatform = () => {
+    const modelSection = document.getElementById('sdc-model-section');
+    if (modelSection) {
+      modelSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="space-y-16">
-      {/* HERO SECTION: Editorial Brutalist Header & 3D Interactive WebGL Orb */}
-      <section className="relative pt-6 pb-12 overflow-hidden">
+      {/* 1. INITIAL PIXELATED ASCII GIF LANDING STAGE (DISSOLVES ON SCROLL) */}
+      <LandingHeroStage onEnter={handleEnterPlatform} />
+
+      {/* 2. 3D GLB MODEL & HERO PLATFORM SECTION (REVEALED ON SCROLL) */}
+      <section id="sdc-model-section" className="relative pt-8 pb-12 overflow-hidden scroll-mt-20">
         {/* Background Grids & Scanlines */}
         <div className="absolute inset-0 bg-blueprint-grid opacity-20 pointer-events-none" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -51,15 +62,16 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
 
             {/* Massive Acubi Typography */}
             <div className="space-y-2">
-              <motion.h1
+              <motion.h2
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
                 className="text-4xl sm:text-6xl lg:text-7xl font-black font-syne tracking-tighter text-white uppercase leading-[0.95]"
               >
                 ARCHITECT <br />
                 <span className="chrome-text">YOUR DIGITAL</span> <br />
                 FRONTIER.
-              </motion.h1>
+              </motion.h2>
             </div>
 
             <p className="font-mono text-xs sm:text-sm text-zinc-400 max-w-xl leading-relaxed">
@@ -73,7 +85,7 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
                   playCyberClick();
                   onOpenRSVP(featuredEvent);
                 }}
-                className="flex items-center gap-2 px-5 py-3 bg-white text-black font-mono font-bold text-xs uppercase tracking-wider border border-white hover:bg-zinc-200 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.25)]"
+                className="flex items-center gap-2 px-5 py-3 bg-white text-black font-mono font-bold text-xs uppercase tracking-wider border border-white hover:bg-zinc-200 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.25)] cursor-target"
               >
                 <Sparkles size={14} />
                 <span>CLAIM EVENT PASS // RSVP</span>
@@ -84,7 +96,7 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
                   playCyberClick();
                   setActiveTab('schedule');
                 }}
-                className="flex items-center gap-2 px-5 py-3 bg-zinc-900 text-zinc-200 font-mono text-xs uppercase tracking-wider border border-zinc-700 hover:border-zinc-500 hover:text-white transition-all"
+                className="flex items-center gap-2 px-5 py-3 bg-zinc-900 text-zinc-200 font-mono text-xs uppercase tracking-wider border border-zinc-700 hover:border-zinc-500 hover:text-white transition-all cursor-target"
               >
                 <Calendar size={14} />
                 <span>VIEW ITINERARY</span>
@@ -95,7 +107,7 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
                   playCyberClick();
                   setActiveTab('roster');
                 }}
-                className="flex items-center gap-2 px-4 py-3 bg-transparent text-zinc-400 font-mono text-xs uppercase tracking-wider hover:text-white transition-colors"
+                className="flex items-center gap-2 px-4 py-3 bg-transparent text-zinc-400 font-mono text-xs uppercase tracking-wider hover:text-white transition-colors cursor-target"
               >
                 <Users size={14} />
                 <span>ROSTER (342) &gt;</span>
@@ -113,15 +125,19 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Interactive 3D Liquid Chrome Three.js Scene */}
+          {/* Right Column: Interactive 3D GLB Model Viewer */}
           <div className="lg:col-span-5 flex justify-center">
             <div className="w-full max-w-md h-80 sm:h-96 relative bg-zinc-950/80 border border-zinc-800 p-2 overflow-hidden tech-corner-box">
-              <ChromeOrbScene interactive={true} className="w-full h-full" />
+              <GlbModelViewer
+                modelUrl="/assets/model.glb"
+                interactive={true}
+                className="w-full h-full"
+              />
               
               {/* Overlay Holographic Stamp */}
               <div className="absolute top-4 right-4 pointer-events-none">
                 <div className="w-10 h-10 border border-white/40 rounded-full flex items-center justify-center font-mono text-[8px] text-white rotate-12">
-                  SDC 3D
+                  TRIPO 3D
                 </div>
               </div>
             </div>
