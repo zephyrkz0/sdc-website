@@ -91,13 +91,13 @@ export const DomainRadar: React.FC<DomainRadarProps> = ({ sessions = [] }) => {
                   <span>Logged Workshop Time</span>
                   <span className="text-white font-bold">{track.displayHours}</span>
                 </div>
-                <div className="w-full h-1.5 bg-zinc-900 overflow-hidden border border-zinc-800">
+                <div className="w-full h-1 bg-zinc-800 overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     whileInView={{ width: `${Math.max(track.percentage, track.hours > 0 ? 10 : 0)}%` }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.8, delay: idx * 0.15 }}
-                    className={`h-full bg-gradient-to-r ${track.accent}`}
+                    className="h-full bg-white"
                   />
                 </div>
               </div>

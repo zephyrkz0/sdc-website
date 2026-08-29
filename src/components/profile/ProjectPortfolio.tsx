@@ -177,11 +177,11 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
                   onChange={(e) => setCategory(e.target.value as DomainTrack)}
                   className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none"
                 >
-                  <option value="CORE_CODE">CORE_CODE (Fullstack)</option>
-                  <option value="GENERATIVE_AI">GENERATIVE_AI (Neural)</option>
-                  <option value="CYBER_SECURITY">CYBER_SECURITY (Security)</option>
-                  <option value="CREATIVE_3D">CREATIVE_3D (WebGL/Shaders)</option>
-                  <option value="PRODUCT_DESIGN">PRODUCT_DESIGN (Acubi UI)</option>
+                  <option value="CORE_CODE">Web Development (Fullstack)</option>
+                  <option value="GENERATIVE_AI">AI & Machine Learning</option>
+                  <option value="CYBER_SECURITY">Cyber Security & Systems</option>
+                  <option value="CREATIVE_3D">3D Graphics & Game Dev</option>
+                  <option value="PRODUCT_DESIGN">UI/UX & Product Design</option>
                 </select>
               </div>
 

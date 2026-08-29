@@ -26,7 +26,7 @@ export const OperativeIdCard: React.FC<OperativeIdCardProps> = ({ member }) => {
       className={`w-full max-w-[320px] p-5 rounded-none relative overflow-hidden font-mono select-none transition-all duration-300 ${styles.cardBgClass} ${styles.cardBorderClass} ${styles.cardGlowClass}`}
     >
       {/* Top Lanyard Cutout Slot */}
-      <div className="w-16 h-2 mx-auto bg-amber-500/80 rounded-full mb-4 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+      <div className="w-16 h-1.5 mx-auto bg-zinc-800 rounded-full mb-4 border border-zinc-700" />
 
       {/* Pass Header */}
       <div className="flex items-center justify-between pb-3 border-b border-zinc-800 text-[10px] text-zinc-400">
@@ -89,8 +89,7 @@ export const OperativeIdCard: React.FC<OperativeIdCardProps> = ({ member }) => {
         <span>
           HOURS: <strong className="text-zinc-300">{member.hoursContributed || 0}h</strong>
         </span>
-        <span className="text-emerald-400 flex items-center gap-1 font-bold">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+        <span className="text-zinc-300 font-bold">
           STATUS: ACTIVE
         </span>
       </div>

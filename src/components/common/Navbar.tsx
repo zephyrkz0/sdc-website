@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Terminal,
@@ -41,6 +41,26 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [muted, setMuted] = useState(isAudioMuted());
+  const [navVisible, setNavVisible] = useState(activeTab !== 'dashboard');
+
+  useEffect(() => {
+    // If on other tabs (directory, schedule, profile, etc.), always visible
+    if (activeTab !== 'dashboard') {
+      setNavVisible(true);
+      return;
+    }
+
+    const handleScroll = () => {
+      // In dashboard: GIF stays fullscreen for a while.
+      // Show navbar only after user has scrolled past the full zoom stage (~2.6 viewports).
+      const threshold = window.innerHeight * 2.6;
+      setNavVisible(window.scrollY > threshold);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeTab]);
 
   const handleToggleAudio = () => {
     const isNowMuted = toggleGlobalAudio();
@@ -54,6 +74,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     playCyberClick();
     setActiveTab(tab);
     setMobileMenuOpen(false);
+    // Scroll back to top when changing tabs
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const navTier = currentUser ? getRoleTier(currentUser) : 'MEMBER';
@@ -69,7 +91,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-[#08080c]/90 backdrop-blur-md border-b border-zinc-800/80 font-mono select-none">
+    <motion.header
+      initial={false}
+      animate={{
+        opacity: navVisible ? 1 : 0,
+        y: navVisible ? 0 : -30,
+      }}
+      style={{
+        pointerEvents: navVisible ? 'auto' : 'none',
+      }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="sticky top-0 z-50 bg-[#08080c]/90 backdrop-blur-md border-b border-zinc-800/80 font-mono select-none"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo: ✦ SDC (Matching Frames) */}
         <div
@@ -250,7 +283,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-    </header>
+    </motion.header>
   );
 };
 export default Navbar;

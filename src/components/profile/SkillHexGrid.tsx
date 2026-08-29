@@ -8,18 +8,18 @@ interface SkillHexGridProps {
 export const SkillHexGrid: React.FC<SkillHexGridProps> = ({ skills }) => {
   const skillLevels: { name: string; level: number; cat: string }[] = [
     { name: 'TypeScript / React', level: 95, cat: 'FRONTEND' },
-    { name: 'Three.js / WebGL', level: 90, cat: 'CREATIVE_3D' },
-    { name: 'GLSL Shaders', level: 85, cat: 'GRAPHICS' },
-    { name: 'Figma / Acubi UI', level: 92, cat: 'DESIGN' },
-    { name: 'Rust / WASM', level: 78, cat: 'SYSTEMS' },
-    { name: 'PyTorch / Neural Agents', level: 75, cat: 'AI_ML' },
+    { name: 'Node.js / Express', level: 90, cat: 'BACKEND' },
+    { name: 'Python / Machine Learning', level: 85, cat: 'AI_ML' },
+    { name: 'Figma / UI Design', level: 92, cat: 'DESIGN' },
+    { name: 'Database & SQL / Supabase', level: 80, cat: 'DATABASE' },
+    { name: 'Competitive Programming / DSA', level: 75, cat: 'DSA' },
   ];
 
   return (
-    <div className="bg-zinc-950 border border-zinc-800 p-6 tech-corner-box">
+    <div className="bg-zinc-950 border border-zinc-800 p-6 shadow-xl">
       <div className="flex items-center justify-between pb-3 border-b border-zinc-800 font-mono text-[10px] text-zinc-400 mb-5">
-        <span className="font-bold text-white">[SKILL_MASTERY_HEX_MATRIX]</span>
-        <span>VERIFIED_BY_SDC</span>
+        <span className="font-bold text-white uppercase tracking-wider">SKILLS & PROFICIENCY</span>
+        <span>VERIFIED BY SDC</span>
       </div>
 
       <div className="space-y-4 font-mono">
@@ -33,13 +33,13 @@ export const SkillHexGrid: React.FC<SkillHexGridProps> = ({ skills }) => {
               </div>
             </div>
 
-            <div className="w-full h-2 bg-zinc-900 border border-zinc-800 overflow-hidden">
+            <div className="w-full h-1.5 bg-zinc-800 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 whileInView={{ width: `${sk.level}%` }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8, delay: idx * 0.08 }}
-                className="h-full bg-gradient-to-r from-zinc-500 via-purple-400 to-white"
+                className="h-full bg-white"
               />
             </div>
           </div>

@@ -310,7 +310,7 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
                   type="text"
                   value={newVenue}
                   onChange={(e) => setNewVenue(e.target.value)}
-                  placeholder="e.g. CUCEK Computer Lab / Sector 01"
+                  placeholder="e.g. CUCEK Computer Lab / Seminar Hall"
                   className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
                 />
               </div>

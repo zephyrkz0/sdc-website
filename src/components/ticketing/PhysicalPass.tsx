@@ -18,14 +18,14 @@ export const PhysicalPass: React.FC<PhysicalPassProps> = ({
   const content = (
     <div
       id={id}
-      className="w-full max-w-xl mx-auto bg-gradient-to-br from-zinc-950 via-zinc-900 to-black border-2 border-zinc-400 p-6 sm:p-8 relative overflow-hidden font-mono select-none shadow-2xl tech-corner-box text-zinc-200"
+      className="w-full max-w-xl mx-auto bg-gradient-to-br from-zinc-950 via-zinc-900 to-black border-2 border-zinc-500 p-6 sm:p-8 relative overflow-hidden font-mono select-none shadow-2xl text-zinc-200"
     >
-      {/* Top Holographic Spec Bar */}
+      {/* Top Spec Bar */}
       <div className="flex items-center justify-between pb-4 border-b-2 border-dashed border-zinc-700 text-[10px] text-zinc-400">
         <div className="flex items-center gap-2">
           <span className="font-bold text-white tracking-widest flex items-center gap-1.5">
-            <span className="w-2 h-2 bg-purple-400 rounded-full animate-ping" />
-            SDC // ACCESS_PASS
+            <span className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
+            SDC // EVENT PASS
           </span>
           <span>//</span>
           <span className="text-zinc-400">{pass.seatTier}</span>
@@ -86,8 +86,8 @@ export const PhysicalPass: React.FC<PhysicalPassProps> = ({
           <div className="p-1 bg-white">
             <QRCodeSVG value={pass.qrPayload} size={110} level="H" includeMargin={false} />
           </div>
-          <div className="text-[8px] font-mono text-center tracking-tighter uppercase font-bold text-zinc-800">
-            SCAN AT TERMINAL
+          <div className="text-[8px] font-mono text-center tracking-wider uppercase font-bold text-zinc-800">
+            CHECK-IN PASS
           </div>
           <div className="text-[7px] font-mono text-zinc-600">
             {pass.accessSecurityCode}
@@ -105,13 +105,9 @@ export const PhysicalPass: React.FC<PhysicalPassProps> = ({
         <div className="flex items-center gap-3 text-zinc-400">
           <span>ISSUED: {pass.issuedAt}</span>
           <span>//</span>
-          <span className="text-white font-bold">AUTH: OK</span>
+          <span className="text-white font-bold">VERIFIED</span>
         </div>
       </div>
-
-      {/* Holographic Watermark Sheen */}
-      <div className="absolute top-1/2 -left-20 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
     </div>
   );
 

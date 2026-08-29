@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { NavTab, Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
-import { TargetCursor } from './components/common/TargetCursor';
 import { GlobalDashboard } from './components/dashboard/GlobalDashboard';
 import { MemberDirectory } from './components/roster/MemberDirectory';
 import { ScheduleTimetable } from './components/schedule/ScheduleTimetable';
@@ -26,6 +25,8 @@ import {
 } from './data/mockData';
 import { ClubMember, ClubEvent, ScheduleSession, PhysicalTicketPass, TerminalLog } from './types';
 import Lenis from 'lenis';
+
+import { Aurora } from './components/common/Aurora';
 
 const AppContent: React.FC = () => {
   const { currentUser, allUsers, isAdmin } = useAuth();
@@ -87,49 +88,73 @@ const AppContent: React.FC = () => {
     loadData();
   }, [currentUser]);
 
-  // Combine database members with local registered users
+  // Combine database members with local registered users with multi-field deduplication
   const combinedMembers = useMemo(() => {
-    const memberMap = new Map<string, ClubMember>();
+    const memberList: ClubMember[] = [];
 
+    const findExisting = (item: { email?: string; username?: string; fullName?: string; id?: string }) => {
+      const email = item.email?.toLowerCase().trim();
+      const username = item.username?.toLowerCase().trim();
+      const name = item.fullName?.toLowerCase().trim();
+
+      return memberList.find((m) => {
+        if (email && m.email && m.email.toLowerCase().trim() === email) return true;
+        if (username && m.username && m.username.toLowerCase().trim() === username) return true;
+        if (name && m.fullName && m.fullName.toLowerCase().trim() === name) return true;
+        if (item.id && m.id === item.id) return true;
+        return false;
+      });
+    };
+
+    // First add members from database/mock
     members.forEach((m) => {
-      const key = (m.email || m.username || m.id).toLowerCase();
-      memberMap.set(key, m);
+      if (!findExisting(m)) {
+        memberList.push({ ...m });
+      }
     });
 
+    // Merge registered user accounts (updating in place if already present)
     allUsers.forEach((u) => {
-      const key = (u.email || u.username || u.id).toLowerCase();
-      const existing = memberMap.get(key);
+      const existing = findExisting(u);
       const isSuperAdmin =
         (u.email || '').toLowerCase().includes('kashinath') ||
         (u.username || '').toLowerCase().includes('kashinath') ||
         u.role === 'MASTER_ADMIN';
 
       const memberCard: ClubMember = {
-        id: u.id,
+        id: existing?.id || u.id,
         userId: u.id,
-        username: u.username || u.callsign || 'member',
-        callsign: u.username || u.callsign || 'member',
-        firstName: u.firstName || '',
-        lastName: u.lastName || '',
-        fullName: u.fullName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Member',
-        email: u.email,
-        role: isSuperAdmin ? 'Super Admin' : u.role === 'ADMIN' ? 'Admin' : u.role || 'Member',
-        track: u.track || 'Web Development',
+        username: u.username || u.callsign || existing?.username || 'member',
+        callsign: u.username || u.callsign || existing?.callsign || 'member',
+        firstName: u.firstName || existing?.firstName || '',
+        lastName: u.lastName || existing?.lastName || '',
+        fullName: u.fullName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || existing?.fullName || 'Member',
+        email: u.email || existing?.email || '',
+        role: isSuperAdmin ? 'Super Admin' : u.role === 'ADMIN' ? 'Admin' : u.role || existing?.role || 'Member',
+        roleTitle: isSuperAdmin ? 'Super Admin' : u.role === 'ADMIN' ? 'Admin' : u.role || existing?.role || 'Member',
+        tier: isSuperAdmin ? 'SUPER_ADMIN' : u.role === 'ADMIN' ? 'ADMIN' : 'MEMBER',
+        track: u.track || existing?.track || 'Web Development',
         branch: u.branch || existing?.branch || '',
         semester: u.semester || existing?.semester || '',
         avatarUrl: u.avatarUrl || existing?.avatarUrl || '',
         bio: u.bio || existing?.bio || '',
         skills: u.skills && u.skills.length > 0 ? u.skills : existing?.skills || [],
-        projects: u.projects || existing?.projects || [],
+        projects: u.projects && u.projects.length > 0 ? u.projects : existing?.projects || [],
         hoursContributed: u.hoursContributed || existing?.hoursContributed || 0,
         githubUrl: u.githubUrl || existing?.githubUrl || '',
         linkedinUrl: u.linkedinUrl || existing?.linkedinUrl || '',
-        status: u.status || 'ACTIVE',
+        status: u.status || existing?.status || 'ACTIVE',
       };
-      memberMap.set(key, memberCard);
+
+      if (existing) {
+        const index = memberList.indexOf(existing);
+        memberList[index] = { ...existing, ...memberCard };
+      } else {
+        memberList.push(memberCard);
+      }
     });
 
-    return Array.from(memberMap.values());
+    return memberList;
   }, [members, allUsers]);
 
   const handleOpenRSVP = (target?: ClubEvent | ScheduleSession) => {
@@ -176,19 +201,19 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#08080a] text-zinc-100 relative selection:bg-white selection:text-black overflow-x-hidden">
+    <div className="min-h-screen bg-[#08080a] text-zinc-100 relative selection:bg-white selection:text-black overflow-x-clip">
+      {/* React Bits WebGL Aurora Background — Sole Background */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <Aurora
+          colorStops={['#7cff67', '#B497CF', '#5227FF']}
+          blend={0.5}
+          amplitude={1.1}
+          speed={0.5}
+        />
+      </div>
+
       {/* Global Preloading Screen (Frame 1) */}
       <GlobalLoadingScreen minDurationMs={1400} />
-
-      {/* TargetCursor follower */}
-      <TargetCursor
-        spinDuration={2}
-        hideDefaultCursor={true}
-        parallaxOn={true}
-        cursorColor="#ffffff"
-        cursorColorOnTarget="#c084fc"
-        targetSelector=".cursor-target, button, a, input, select, textarea, [data-interactive='true'], .interactive-card, .tab-btn"
-      />
 
       {/* Navigation Header (Frames 5, 9, 10, 11, 12, 13) */}
       <Navbar
