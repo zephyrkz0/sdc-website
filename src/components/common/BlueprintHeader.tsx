@@ -2,36 +2,42 @@ import React from 'react';
 
 interface BlueprintHeaderProps {
   stepNumber?: string;
+  section?: string;
   tag?: string;
   title: string;
   subtitle?: string;
+  action?: React.ReactNode;
   align?: 'left' | 'center' | 'right';
   className?: string;
 }
 
 export const BlueprintHeader: React.FC<BlueprintHeaderProps> = ({
-  stepNumber = '01',
+  stepNumber,
+  section,
   tag,
   title,
   subtitle,
+  action,
   align = 'left',
   className = '',
 }) => {
+  const displayStep = section || stepNumber || '01';
   return (
     <div className={`relative mb-8 ${className}`}>
       {/* Step Indicator */}
-      <div className={`flex items-center gap-2 font-mono text-[10px] text-zinc-400 tracking-wider mb-2 select-none uppercase ${
-        align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'
-      }`}>
-        <span className="px-1.5 py-0.5 border border-zinc-700 bg-zinc-900 text-zinc-300 font-bold">
-          {stepNumber}
-        </span>
-        {tag && (
-          <>
-            <span className="text-zinc-600">//</span>
-            <span className="text-zinc-400">{tag}</span>
-          </>
-        )}
+      <div className={`flex items-center justify-between font-mono text-[10px] text-zinc-400 tracking-wider mb-2 select-none uppercase`}>
+        <div className="flex items-center gap-2">
+          <span className="px-1.5 py-0.5 border border-zinc-700 bg-zinc-900 text-zinc-300 font-bold">
+            {displayStep}
+          </span>
+          {tag && (
+            <>
+              <span className="text-zinc-600">//</span>
+              <span className="text-zinc-400">{tag}</span>
+            </>
+          )}
+        </div>
+        {action && <div>{action}</div>}
       </div>
 
       {/* Main Title */}

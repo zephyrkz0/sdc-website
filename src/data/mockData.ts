@@ -680,3 +680,33 @@ export const TERMINAL_LOGS: TerminalLog[] = [
   { id: 'log-4', timestamp: '14:22:11', category: 'DEPLOY', message: 'Project [ACUBI_UI // DESIGN TOKENS] tagged v2.6.4 release.', author: 'MIN_ECHO' },
   { id: 'log-5', timestamp: '13:05:44', category: 'ALERT', message: 'CTF War-Games arena target sandboxes initialized on port 8099.', author: 'VEX_ROOT' },
 ];
+
+export const INITIAL_GALLERY_ITEMS: import('../types').GalleryItem[] = [
+  {
+    id: 'gal-01',
+    title: 'CUCEK Hackathon 2026 Opening Keynote',
+    category: 'HACKATHONS',
+    imageUrl: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&auto=format&fit=crop&q=80',
+    date: '2026-08-10',
+    description: 'Over 120 developers joined the 36-hour sprint on campus.',
+    tags: ['Hackathon', 'CUCEK', 'Keynote'],
+  },
+  {
+    id: 'gal-02',
+    title: 'WebGL & Shader Coding Masterclass',
+    category: 'WORKSHOPS',
+    imageUrl: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&auto=format&fit=crop&q=80',
+    date: '2026-08-14',
+    description: 'Hands-on three.js live coding with interactive raymarching examples.',
+    tags: ['Workshop', 'Three.js', 'GLSL'],
+  },
+  {
+    id: 'gal-03',
+    title: 'Weekly Core Code Lab Session',
+    category: 'DAILY_SESSIONS',
+    imageUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop&q=80',
+    date: '2026-08-20',
+    description: 'Pair programming and pull request reviews in Sector 01 lab.',
+    tags: ['Community', 'Code', 'Campus'],
+  },
+];

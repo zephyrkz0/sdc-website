@@ -1,111 +1,362 @@
-import React, { useState, useMemo } from 'react';
-import { ScheduleSession, SessionType, ClubEvent } from '../../types';
+import React, { useState } from 'react';
+import { ScheduleSession } from '../../types';
 import { SessionCard } from './SessionCard';
-import { BlueprintHeader } from '../common/BlueprintHeader';
-import { Search, Calendar, Filter, Sparkles, Clock, MapPin } from 'lucide-react';
-import { playCyberClick } from '../common/AudioEffects';
+import { Search, Plus, Calendar, Shield, Clock } from 'lucide-react';
+import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
+import { useAuth } from '../../context/AuthContext';
 
 interface ScheduleTimetableProps {
-  sessions: ScheduleSession[];
-  onRSVP: (session: ScheduleSession | ClubEvent) => void;
+  sessions?: ScheduleSession[];
+  onRSVP?: (session: ScheduleSession) => void;
+  onAddSession?: (session: ScheduleSession) => void;
 }
 
 export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
-  sessions,
+  sessions = [],
   onRSVP,
+  onAddSession,
 }) => {
-  const [selectedType, setSelectedType] = useState<SessionType | 'ALL'>('ALL');
+  const { isAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState<'UPCOMING' | 'ARCHIVE'>('UPCOMING');
+  const [activeCategory, setActiveCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
-  const sessionTypes: { id: SessionType | 'ALL'; label: string }[] = [
-    { id: 'ALL', label: 'ALL SESSIONS' },
-    { id: 'CODE', label: 'CODE SPRINTS' },
-    { id: 'AI', label: 'AI & NEURAL' },
-    { id: 'CYBER', label: 'CYBER WAR-GAMES' },
-    { id: 'DESIGN', label: '3D & SHADERS' },
-    { id: 'WORKSHOP', label: 'EDITORIAL ZINE' },
-    { id: 'HACKATHON', label: '48H HACKATHON' },
+  // New session form states
+  const [newTitle, setNewTitle] = useState('');
+  const [newTrack, setNewTrack] = useState('Web Development');
+  const [newDate, setNewDate] = useState('');
+  const [newTimeStart, setNewTimeStart] = useState('17:30');
+  const [newTimeEnd, setNewTimeEnd] = useState('19:30');
+  const [newVenue, setNewVenue] = useState('CUCEK Computer Lab');
+  const [newInstructor, setNewInstructor] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+
+  const categories = [
+    { id: 'ALL', label: 'All Sessions' },
+    { id: 'DAILY_LAB', label: 'Daily Lab Sessions' },
+    { id: 'WORKSHOPS', label: 'Workshops' },
+    { id: 'TALKS', label: 'Talk Sessions' },
+    { id: 'HACKATHONS', label: 'Hackathons' },
   ];
 
-  const filteredSessions = useMemo(() => {
-    return sessions.filter((sess) => {
-      const matchesSearch =
-        sess.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sess.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sess.instructor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sess.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sess.curriculum.some((c) => c.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredSessions = sessions.filter((s) => {
+    const matchesSearch =
+      searchQuery === '' ||
+      s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.instructorName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.description || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesType = selectedType === 'ALL' || sess.sessionType === selectedType;
+    const matchesCategory =
+      activeCategory === 'ALL' ||
+      (activeCategory === 'DAILY_LAB' && (s.sessionType === 'DAILY_SESSION' || s.title.toLowerCase().includes('daily') || s.title.toLowerCase().includes('lab'))) ||
+      (activeCategory === 'WORKSHOPS' && (s.sessionType === 'WORKSHOP' || s.title.toLowerCase().includes('workshop'))) ||
+      (activeCategory === 'TALKS' && (s.sessionType === 'TALK' || s.title.toLowerCase().includes('talk'))) ||
+      (activeCategory === 'HACKATHONS' && (s.sessionType === 'HACKATHON' || s.title.toLowerCase().includes('hackathon')));
 
-      return matchesSearch && matchesType;
-    });
-  }, [sessions, searchQuery, selectedType]);
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleCreateSession = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle || !newDate) return;
+
+    const newSession: ScheduleSession = {
+      id: `ses-${Date.now()}`,
+      title: newTitle,
+      track: newTrack,
+      date: newDate,
+      timeStart: newTimeStart,
+      timeEnd: newTimeEnd,
+      venue: newVenue,
+      instructorName: newInstructor || 'SDC Lead',
+      description: newDescription || 'Hands-on learning session for club members.',
+      status: 'UPCOMING',
+      sessionType: 'DAILY_SESSION',
+    };
+
+    if (onAddSession) {
+      onAddSession(newSession);
+    }
+    playSuccessChime();
+    setAddModalOpen(false);
+    setNewTitle('');
+    setNewDate('');
+    setNewInstructor('');
+    setNewDescription('');
+  };
 
   return (
-    <div className="space-y-12">
-      {/* SECTION HEADER */}
-      <BlueprintHeader
-        stepNumber="03"
-        tag="ITINERARY"
-        title="SCHEDULE & ITINERARY"
-        subtitle="Upcoming technical workshops, coding sprints, and hackathons."
-      />
+    <div className="space-y-8 animate-fade-in font-mono">
+      {/* Header (Frame 9) */}
+      <div className="space-y-2 border-b border-zinc-800 pb-4">
+        <h2 className="text-3xl sm:text-4xl font-syne font-black tracking-tight text-white uppercase">
+          SCHEDULE & TIMETABLE
+        </h2>
+        <p className="text-xs text-zinc-400">
+          Explore upcoming learning sessions, hands-on workshops, and past event archives.
+        </p>
+      </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center bg-zinc-950 p-4 border border-zinc-800">
+      {/* ADMINISTRATOR EVENT CONTROLS PURPLE BANNER (Frame 9) */}
+      {isAdmin && (
+        <div className="p-4 sm:p-5 bg-[#0e0a16] border border-purple-600/70 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Shield size={16} className="text-purple-400" />
+              <span className="font-bold text-white text-xs uppercase tracking-wider">
+                ADMINISTRATOR EVENT CONTROLS
+              </span>
+            </div>
+            <p className="text-xs text-zinc-300">
+              You can create and publish live sessions, workshops, and hackathons directly to the schedule.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              playCyberClick();
+              setAddModalOpen(true);
+            }}
+            className="px-4 py-2 bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-zinc-200 transition-all flex items-center gap-1.5 whitespace-nowrap self-start md:self-auto"
+          >
+            <Plus size={14} />
+            <span>+ SCHEDULE WORKSHOP / SESSION</span>
+          </button>
+        </div>
+      )}
+
+      {/* Tabs Strip (Upcoming vs Archive) */}
+      <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              playCyberClick();
+              setActiveTab('UPCOMING');
+            }}
+            className={`px-4 py-2 text-xs font-bold uppercase transition-all ${
+              activeTab === 'UPCOMING'
+                ? 'bg-white text-black'
+                : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'
+            }`}
+          >
+            UPCOMING SESSIONS ({filteredSessions.length})
+          </button>
+          <button
+            onClick={() => {
+              playCyberClick();
+              setActiveTab('ARCHIVE');
+            }}
+            className={`px-4 py-2 text-xs font-bold uppercase transition-all ${
+              activeTab === 'ARCHIVE'
+                ? 'bg-white text-black'
+                : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'
+            }`}
+          >
+            PAST EVENTS ARCHIVE (0)
+          </button>
+        </div>
+
+        <span className="hidden sm:inline text-zinc-500 text-[10px]">
+          UPCOMING SESSIONS
+        </span>
+      </div>
+
+      {/* Filter Toolbar & Category Buttons (Frame 9) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0d0d12] border border-zinc-800 p-3">
         {/* Search */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 max-w-md">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search topic, instructor, curriculum keyword (e.g. PyTorch, WASM)..."
-            className="w-full bg-zinc-900 border border-zinc-800 pl-9 pr-4 py-2 font-mono text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
+            placeholder="Search topic, instructor, curriculum keyword..."
+            className="w-full pl-9 pr-4 py-2 bg-[#121218] border border-zinc-800 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
           />
         </div>
 
-        {/* Type Buttons */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
-          {sessionTypes.map((t) => {
-            const isSelected = selectedType === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => {
-                  playCyberClick();
-                  setSelectedType(t.id);
-                }}
-                className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider whitespace-nowrap border transition-all ${
-                  isSelected
-                    ? 'bg-zinc-200 text-black border-white font-bold'
-                    : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white'
-                }`}
-              >
-                {t.label}
-              </button>
-            );
-          })}
+        {/* Category Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          {categories.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => {
+                playCyberClick();
+                setActiveCategory(c.id);
+              }}
+              className={`px-3 py-1.5 font-bold uppercase transition-all ${
+                activeCategory === c.id
+                  ? 'bg-white text-black'
+                  : 'bg-[#121218] text-zinc-400 hover:text-white border border-zinc-800'
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Session Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredSessions.length > 0 ? (
-          filteredSessions.map((session) => (
-            <SessionCard
-              key={session.id}
-              session={session}
-              onRSVP={(s) => onRSVP(s)}
-            />
-          ))
-        ) : (
-          <div className="lg:col-span-2 text-center py-16 bg-zinc-950 border border-dashed border-zinc-800 font-mono text-zinc-500">
-            [!] NO SCHEDULED SESSIONS MATCH CURRENT FILTERS.
+      {/* Sessions Grid or Empty State (Frame 9) */}
+      {filteredSessions.length === 0 ? (
+        <div className="p-16 bg-[#0a0a0f] border border-zinc-800 text-center space-y-4 shadow-xl">
+          <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-700 flex items-center justify-center text-zinc-400">
+            <Calendar size={22} />
           </div>
-        )}
-      </div>
+          <div className="space-y-1">
+            <h4 className="font-syne font-black text-lg text-white uppercase">
+              NO UPCOMING SESSIONS SCHEDULED YET
+            </h4>
+            <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+              {isAdmin
+                ? 'As an Administrator, click "+ SCHEDULE WORKSHOP / SESSION" above to publish daily 5:30 - 7:30 PM lab sessions, talk sessions, or hackathons.'
+                : 'Upcoming daily sessions and workshops will appear here once published by club leads.'}
+            </p>
+          </div>
+          {isAdmin && (
+            <button
+              onClick={() => {
+                playCyberClick();
+                setAddModalOpen(true);
+              }}
+              className="px-5 py-2.5 bg-white text-black font-bold uppercase text-xs hover:bg-zinc-200 inline-flex items-center gap-1.5"
+            >
+              <Plus size={14} />
+              <span>+ CREATE FIRST LIVE SESSION</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredSessions.map((session) => (
+            <SessionCard key={session.id} session={session} onRSVP={onRSVP} />
+          ))}
+        </div>
+      )}
+
+      {/* Schedule Live Session Modal */}
+      {addModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="max-w-md w-full bg-[#0d0d14] border border-zinc-700 p-6 space-y-4 shadow-2xl font-mono text-xs">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <span className="font-bold text-white uppercase">SCHEDULE WORKSHOP / SESSION</span>
+              <button onClick={() => setAddModalOpen(false)} className="text-zinc-400 hover:text-white">
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSession} className="space-y-3">
+              <div>
+                <label className="block text-zinc-400 mb-1 text-[10px]">SESSION TITLE</label>
+                <input
+                  type="text"
+                  required
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="e.g. WebGL Shader Live Coding Masterclass"
+                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-400 mb-1 text-[10px]">DATE</label>
+                  <input
+                    type="date"
+                    required
+                    value={newDate}
+                    onChange={(e) => setNewDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 mb-1 text-[10px]">TRACK</label>
+                  <select
+                    value={newTrack}
+                    onChange={(e) => setNewTrack(e.target.value)}
+                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                  >
+                    <option value="Web Development">Web Development</option>
+                    <option value="DSA">DSA</option>
+                    <option value="AI & Machine Learning">AI & Machine Learning</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-400 mb-1 text-[10px]">START TIME</label>
+                  <input
+                    type="time"
+                    value={newTimeStart}
+                    onChange={(e) => setNewTimeStart(e.target.value)}
+                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 mb-1 text-[10px]">END TIME</label>
+                  <input
+                    type="time"
+                    value={newTimeEnd}
+                    onChange={(e) => setNewTimeEnd(e.target.value)}
+                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 mb-1 text-[10px]">VENUE</label>
+                <input
+                  type="text"
+                  value={newVenue}
+                  onChange={(e) => setNewVenue(e.target.value)}
+                  placeholder="e.g. CUCEK Computer Lab / Sector 01"
+                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 mb-1 text-[10px]">INSTRUCTOR / LEAD</label>
+                <input
+                  type="text"
+                  value={newInstructor}
+                  onChange={(e) => setNewInstructor(e.target.value)}
+                  placeholder="e.g. Kasinath R"
+                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 mb-1 text-[10px]">DESCRIPTION</label>
+                <textarea
+                  rows={2}
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="Brief curriculum or topics covered..."
+                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAddModalOpen(false)}
+                  className="px-4 py-2 bg-zinc-900 text-zinc-300 border border-zinc-800"
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-white text-black font-bold uppercase hover:bg-zinc-200"
+                >
+                  PUBLISH SESSION
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+export default ScheduleTimetable;

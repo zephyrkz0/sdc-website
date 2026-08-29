@@ -1,255 +1,119 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Terminal, Shield, Calendar, Users, Cpu, QrCode, Activity, Flame } from 'lucide-react';
-import { GlobalClubStats, TerminalLog, ClubEvent } from '../../types';
-import { StatCounter } from './StatCounter';
-import { DomainRadar } from './DomainRadar';
-import { BlueprintManual } from './BlueprintManual';
-import { GlbModelViewer } from '../3d/GlbModelViewer';
-import { LandingHeroStage } from '../landing/LandingHeroStage';
-import { BlueprintHeader } from '../common/BlueprintHeader';
-import { ChromeBadge } from '../common/ChromeBadge';
-import { playCyberClick } from '../common/AudioEffects';
+import React, { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { GlbModelViewer } from './GlbModelViewer';
 import { NavTab } from '../common/Navbar';
+import { DomainRadar } from './DomainRadar';
+import { Users, Calendar } from 'lucide-react';
+import { playCyberClick } from '../common/AudioEffects';
 
 interface GlobalDashboardProps {
-  stats: GlobalClubStats;
-  logs: TerminalLog[];
-  featuredEvent: ClubEvent;
+  stats?: any;
+  logs?: any[];
+  featuredEvent?: any;
   setActiveTab: (tab: NavTab) => void;
-  onOpenRSVP: (event?: ClubEvent) => void;
-  onOpenScanner: () => void;
+  onOpenRSVP?: () => void;
+  onOpenScanner?: () => void;
 }
 
 export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
-  stats,
-  logs,
-  featuredEvent,
   setActiveTab,
   onOpenRSVP,
-  onOpenScanner,
 }) => {
-  const handleEnterPlatform = () => {
-    const modelSection = document.getElementById('sdc-model-section');
-    if (modelSection) {
-      modelSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  });
+
+  // GIF pill: starts at 22% width / full pill-radius, grows to 100% / slightly rounded
+  const gifWidth = useTransform(scrollYProgress, [0, 0.55], ['22%', '100%']);
+  const gifHeight = useTransform(scrollYProgress, [0, 0.55], ['160px', '580px']);
+  const gifRadius = useTransform(scrollYProgress, [0, 0.4], ['9999px', '16px']);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+  const titleY = useTransform(scrollYProgress, [0, 0.2], [0, -40]);
 
   return (
-    <div className="w-full relative">
-      {/* 1. INITIAL FULLSCREEN PIXELATED ASCII GIF LANDING STAGE */}
-      <LandingHeroStage onEnter={handleEnterPlatform} />
+    <div className="relative min-h-screen text-white font-mono overflow-hidden">
+      {/* Aurora Ambient Background */}
+      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div className="absolute -top-[10%] -left-[10%] w-[55vw] h-[55vw] bg-emerald-500/15 rounded-full blur-[140px]" />
+        <div className="absolute -top-[10%] -right-[10%] w-[55vw] h-[55vw] bg-purple-600/20 rounded-full blur-[140px]" />
+        <div className="absolute top-[40%] left-[20%] w-[60vw] h-[60vw] bg-indigo-900/10 rounded-full blur-[160px]" />
+      </div>
 
-      {/* 2. REVEALED ON SCROLL: 3D GLB MODEL & REST OF PLATFORM */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 relative z-10 pb-12">
-        {/* 3D GLB Model Section */}
-        <section id="sdc-model-section" className="relative pt-8 pb-12 overflow-hidden scroll-mt-20">
-          {/* Background Grids & Scanlines */}
-          <div className="absolute inset-0 bg-blueprint-grid opacity-20 pointer-events-none" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+      {/* HERO: Title + scroll-growing GIF */}
+      <section ref={heroRef} className="relative min-h-[200vh] flex flex-col items-center pt-24 pb-32 px-4 sm:px-6">
+        {/* Brand title — fades as GIF expands */}
+        <motion.div
+          style={{ opacity: titleOpacity, y: titleY }}
+          className="text-center space-y-3 select-none mb-10 z-10 relative"
+        >
+          <h1 className="font-openboek text-4xl sm:text-6xl md:text-7xl font-bold tracking-wider text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.4)]">
+            SKILL DEVELOPMENT
+          </h1>
+          <h2 className="font-openboek text-3xl sm:text-5xl md:text-6xl font-bold tracking-widest text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.4)]">
+            CLUB.
+          </h2>
+          <p className="font-mono text-xs text-zinc-400 tracking-[0.3em] uppercase mt-2">
+            CUCEK · growth through skills
+          </p>
+        </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-            {/* Left Column: Editorial Headline & Manifesto */}
-            <div className="lg:col-span-7 space-y-6">
-              {/* Top Tag Pills */}
-              <div className="flex flex-wrap items-center gap-2">
-                <ChromeBadge label="SKILL_DEVELOPMENT_CLUB" variant="silver" size="sm" />
-                <ChromeBadge label="AUTONOMOUS_MATRIX // 2026" variant="dark" size="sm" />
-                <span className="font-mono text-[10px] text-zinc-500 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  ONLINE
-                </span>
-              </div>
-
-              {/* Massive Acubi Typography */}
-              <div className="space-y-2">
-                <motion.h2
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="text-4xl sm:text-6xl lg:text-7xl font-black font-syne tracking-tighter text-white uppercase leading-[0.95]"
-                >
-                  ARCHITECT <br />
-                  <span className="chrome-text">YOUR DIGITAL</span> <br />
-                  FRONTIER.
-                </motion.h2>
-              </div>
-
-              <p className="font-mono text-xs sm:text-sm text-zinc-400 max-w-xl leading-relaxed">
-                SDC is the centralized operational platform for aggregate skill tracking, high-velocity engineering workshops, verified operative rosters, and holographic event ticketing.
-              </p>
-
-              {/* Quick Action Trigger Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <button
-                  onClick={() => {
-                    playCyberClick();
-                    onOpenRSVP(featuredEvent);
-                  }}
-                  className="flex items-center gap-2 px-5 py-3 bg-white text-black font-mono font-bold text-xs uppercase tracking-wider border border-white hover:bg-zinc-200 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.25)] cursor-target"
-                >
-                  <Sparkles size={14} />
-                  <span>CLAIM EVENT PASS // RSVP</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    playCyberClick();
-                    setActiveTab('schedule');
-                  }}
-                  className="flex items-center gap-2 px-5 py-3 bg-zinc-900 text-zinc-200 font-mono text-xs uppercase tracking-wider border border-zinc-700 hover:border-zinc-500 hover:text-white transition-all cursor-target"
-                >
-                  <Calendar size={14} />
-                  <span>VIEW ITINERARY</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    playCyberClick();
-                    setActiveTab('roster');
-                  }}
-                  className="flex items-center gap-2 px-4 py-3 bg-transparent text-zinc-400 font-mono text-xs uppercase tracking-wider hover:text-white transition-colors cursor-target"
-                >
-                  <Users size={14} />
-                  <span>ROSTER (342) &gt;</span>
-                </button>
-              </div>
-
-              {/* Technical Coordinate Banner */}
-              <div className="pt-4 flex items-center gap-4 text-[10px] font-mono text-zinc-500">
-                <span className="flex items-center gap-1.5 text-zinc-400">
-                  <Flame size={12} className="text-amber-400" />
-                  ACTIVE_SPRINT: WEEK_34
-                </span>
-                <span>//</span>
-                <span>TOTAL_UPLINK: 1,280 OPERATIVES</span>
-              </div>
-            </div>
-
-            {/* Right Column: Interactive 3D GLB Model Viewer */}
-            <div className="lg:col-span-5 flex justify-center">
-              <div className="w-full max-w-md h-80 sm:h-96 relative bg-zinc-950/80 border border-zinc-800 p-2 overflow-hidden tech-corner-box">
-                <GlbModelViewer
-                  modelUrl="/assets/model.glb"
-                  interactive={true}
-                  className="w-full h-full"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* MODULE 1.1: AGGREGATE CLUB TELEMETRY & IMPACT COUNTERS */}
-        <section>
-          <BlueprintHeader
-            stepNumber="01"
-            tag="TELEMETRY_AGGREGATE"
-            title="GLOBAL CLUB IMPACT & METRICS"
-            subtitle="Real-time synchronized data points aggregating club achievements, executed skill-building hours, and personnel upskilled."
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCounter
-              figNum="1.1"
-              label="SESSIONS LOGGED"
-              value={stats.totalSessionsLogged}
-              suffix="+"
-              detail="Hands-on coding, design sprints & war-games"
-              changeRate="+18% MOM"
+        {/* Sticky scroll-expanding GIF container */}
+        <div className="sticky top-24 w-full flex justify-center z-10">
+          <motion.div
+            style={{
+              width: gifWidth,
+              height: gifHeight,
+              borderRadius: gifRadius,
+            }}
+            className="overflow-hidden bg-black border border-zinc-700 shadow-[0_0_60px_rgba(59,130,246,0.2)] relative"
+          >
+            <img
+              src="/assets/desktop.gif"
+              alt="SDC"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/assets/ascii-magic-3.gif';
+              }}
             />
-            <StatCounter
-              figNum="1.2"
-              label="SKILL HOURS EXECUTED"
-              value={stats.totalHoursExecuted}
-              suffix=" HRS"
-              detail="Aggregated peer-reviewed training time"
-              changeRate="+24% MOM"
-            />
-            <StatCounter
-              figNum="1.3"
-              label="MEMBERS UPSKILLED"
-              value={stats.totalUpskilledMembers}
-              suffix="+"
-              detail="Certified operatives across 5 domains"
-              changeRate="+120 NEW"
-            />
-            <StatCounter
-              figNum="1.4"
-              label="PRODUCTION DEPLOYMENTS"
-              value={stats.productionDeployments}
-              suffix=" REPOS"
-              detail="Open-source packages & apps shipped"
-              changeRate="89 SHIPPED"
-            />
-          </div>
-        </section>
+            {/* CRT scanlines */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.2)_50%)] bg-[length:100%_4px] pointer-events-none opacity-30" />
+          </motion.div>
+        </div>
+      </section>
 
-        {/* MODULE 1.2: DOMAIN RADAR & PRE-ACTION ASSEMBLY MANUAL */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left: Domain Skill Distribution */}
-          <div className="lg:col-span-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-syne font-bold text-xl text-white uppercase flex items-center gap-2">
-                <span className="text-zinc-500">//</span> DOMAIN DISTRIBUTION
-              </h3>
-              <span className="font-mono text-[10px] text-zinc-400">SPEC_RADAR</span>
-            </div>
-            <DomainRadar stats={stats} />
-          </div>
-
-          {/* Right: Acubi Assembly Manual Widget */}
-          <div className="lg:col-span-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-syne font-bold text-xl text-white uppercase flex items-center gap-2">
-                <span className="text-zinc-500">//</span> ONBOARDING MANUAL
-              </h3>
-              <span className="font-mono text-[10px] text-zinc-400">ACUBI_GUIDE</span>
-            </div>
-            <BlueprintManual />
-          </div>
-        </section>
-
-        {/* MODULE 1.3: FEATURED EVENT SPOTLIGHT (INSTANT RSVP TRIGGER) */}
-        <section className="relative overflow-hidden bg-zinc-950 border border-zinc-800 p-6 sm:p-8 tech-corner-box">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center relative z-10">
-            <div className="lg:col-span-8 space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <ChromeBadge label="UPCOMING_FLAGSHIP" variant="silver" />
-                <ChromeBadge label={featuredEvent.date} variant="dark" />
-                <span className="font-mono text-[10px] text-emerald-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  RSVP OPEN ({featuredEvent.capacity - featuredEvent.rsvpCount} SEATS LEFT)
-                </span>
-              </div>
-
-              <h2 className="text-2xl sm:text-4xl font-black font-syne text-white tracking-tight">
-                {featuredEvent.title}
+      {/* MAIN BODY CONTENT */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-24 relative z-20">
+        {/* WHO ARE WE? AND WHAT DO WE DO? (Frame 6) */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Left: Mission & Details */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-3xl sm:text-5xl font-syne font-black tracking-tight text-white uppercase">
+                WHO ARE WE?
               </h2>
-
-              <p className="font-mono text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                {featuredEvent.description}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-zinc-400">
-                <span className="text-zinc-300">LOC: {featuredEvent.location}</span>
-                <span>//</span>
-                <span className="text-zinc-300">TIME: {featuredEvent.time}</span>
-              </div>
+              <h3 className="text-2xl sm:text-4xl font-syne font-black tracking-tight text-purple-300 uppercase">
+                AND WHAT DO WE DO?
+              </h3>
+              <div className="w-20 h-1 bg-purple-500 mt-2" />
             </div>
 
-            <div className="lg:col-span-4 flex flex-col gap-3">
+            <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-mono">
+              Skill Development Club (SDC) is an active student technical community at CUCEK focused on upskilling and mentoring students on various technical and soft skills. We provide students with an active community they can engage with along with daily sessions from 5:30 to 7:30 PM at CUCEK where any student can come and work on their skills regardless of the domain they are interested in, ask doubts, or seek guidance from experienced seniors. Along with all this, we also conduct talk sessions and hackathons. Our aim is to upskill students to prepare them for real-world jobs and environments.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 pt-2 font-mono text-xs">
               <button
                 onClick={() => {
                   playCyberClick();
-                  onOpenRSVP(featuredEvent);
+                  setActiveTab('roster');
                 }}
-                className="w-full py-3.5 bg-gradient-to-r from-white via-zinc-200 to-white text-black font-mono font-bold text-xs uppercase tracking-wider border border-white hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center justify-center gap-2 cursor-target"
+                className="px-6 py-3 bg-white text-black font-bold uppercase tracking-wider hover:bg-zinc-200 transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.2)]"
               >
-                <QrCode size={16} />
-                <span>GENERATE PASS // RSVP</span>
+                <Users size={14} />
+                <span>VIEW MEMBER DIRECTORY</span>
               </button>
 
               <button
@@ -257,56 +121,58 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
                   playCyberClick();
                   setActiveTab('schedule');
                 }}
-                className="w-full py-2.5 bg-zinc-900 text-zinc-300 font-mono text-xs uppercase tracking-wider border border-zinc-700 hover:border-zinc-500 hover:text-white transition-colors text-center cursor-target"
+                className="px-6 py-3 bg-[#0d0d14] text-white border border-zinc-700 hover:border-white font-bold uppercase tracking-wider transition-all flex items-center gap-2"
               >
-                VIEW FULL SCHEDULE
+                <Calendar size={14} />
+                <span>SESSION SCHEDULE</span>
               </button>
             </div>
           </div>
-        </section>
 
-        {/* MODULE 1.4: REAL-TIME CLUB OPERATIONS TERMINAL LOGS */}
-        <section className="bg-zinc-950 border border-zinc-800 p-6 tech-corner-box">
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800 font-mono text-[10px] text-zinc-400 mb-4">
-            <div className="flex items-center gap-2">
-              <Terminal size={14} className="text-emerald-400" />
-              <span className="font-bold text-zinc-200">SDC_OPERATIONAL_LOG // LIVE_FEED</span>
-            </div>
-            <span className="flex items-center gap-1.5 text-zinc-400">
-              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-              AUTO_STREAM_ACTIVE
-            </span>
-          </div>
+          {/* Right: Centered Interactive 3D Model Box (Frame 6) */}
+          <div className="lg:col-span-5 flex justify-center">
+            <div className="w-full max-w-[420px] aspect-square bg-[#0c0c12]/90 border border-zinc-800 relative overflow-hidden shadow-2xl">
+              <GlbModelViewer modelUrl="/assets/3d.glb" className="w-full h-full" />
 
-          <div className="space-y-2 font-mono text-xs max-h-48 overflow-y-auto pr-2">
-            {logs.map((log) => (
-              <div
-                key={log.id}
-                className="flex items-start gap-3 p-2 bg-zinc-900/40 border border-zinc-900 hover:border-zinc-800 transition-colors"
-              >
-                <span className="text-zinc-500 text-[10px] select-none">[{log.timestamp}]</span>
-                <span
-                  className={`text-[9px] px-1.5 py-0.2 border uppercase font-bold select-none ${
-                    log.category === 'SYS'
-                      ? 'border-blue-500/40 text-blue-400 bg-blue-950/20'
-                      : log.category === 'SKILL'
-                      ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20'
-                      : log.category === 'EVENT'
-                      ? 'border-purple-500/40 text-purple-400 bg-purple-950/20'
-                      : log.category === 'ALERT'
-                      ? 'border-red-500/40 text-red-400 bg-red-950/20'
-                      : 'border-zinc-700 text-zinc-400 bg-zinc-900'
-                  }`}
-                >
-                  {log.category}
-                </span>
-                <span className="text-zinc-300 flex-1 text-[11px]">{log.message}</span>
-                <span className="text-zinc-500 text-[10px] hidden sm:inline">@{log.author}</span>
+              <div className="absolute bottom-3 right-3 text-[9px] font-mono text-zinc-500 bg-black/60 px-2 py-1 border border-zinc-800 pointer-events-none">
+                DRAG TO ROTATE 3D MESH
               </div>
-            ))}
+            </div>
           </div>
         </section>
-      </div>
+
+        {/* CORE FOCUS DOMAINS (Frame 7) */}
+        <section>
+          <DomainRadar />
+        </section>
+
+        {/* EVENTS & WORKSHOPS BANNER (Frame 8) */}
+        <section className="bg-[#0c0c14] border border-zinc-800 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl">
+          <div className="space-y-2">
+            <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-mono">
+              EVENTS & WORKSHOPS
+            </span>
+            <h3 className="font-syne font-black text-xl sm:text-2xl text-white tracking-tight">
+              SCHEDULE READY • EXPLORE SESSIONS & WORKSHOPS
+            </h3>
+            <p className="text-xs text-zinc-400 font-mono max-w-xl leading-relaxed">
+              Explore the schedule timetable for upcoming daily 5:30 - 7:30 PM lab sessions, workshops, and hackathons.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              playCyberClick();
+              setActiveTab('schedule');
+            }}
+            className="px-6 py-3 bg-white text-black font-bold uppercase tracking-wider hover:bg-zinc-200 transition-all flex items-center gap-2 whitespace-nowrap self-start md:self-auto"
+          >
+            <Calendar size={14} />
+            <span>VIEW SCHEDULE TIMETABLE</span>
+          </button>
+        </section>
+      </main>
     </div>
   );
 };
+export default GlobalDashboard;

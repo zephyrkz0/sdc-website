@@ -1,8 +1,9 @@
 import React from 'react';
 import { ClubMember } from '../../types';
 import { ChromeBadge } from '../common/ChromeBadge';
-import { ArrowUpRight, Shield, Award, Terminal } from 'lucide-react';
+import { ArrowUpRight, Crown, Shield } from 'lucide-react';
 import { playCyberClick, playHoverBeep } from '../common/AudioEffects';
+import { getRoleTier, getRoleStyles } from '../../utils/roleUtils';
 
 interface OperativeRowProps {
   member: ClubMember;
@@ -10,22 +11,11 @@ interface OperativeRowProps {
 }
 
 export const OperativeRow: React.FC<OperativeRowProps> = ({ member, onSelect }) => {
-  const getTrackBadge = (track: string) => {
-    switch (track) {
-      case 'CORE_CODE':
-        return <ChromeBadge label="CODE" variant="dark" size="sm" />;
-      case 'GENERATIVE_AI':
-        return <ChromeBadge label="AI_NEURAL" variant="holo" size="sm" />;
-      case 'CYBER_SECURITY':
-        return <ChromeBadge label="CYBER_OPS" variant="alert" size="sm" />;
-      case 'CREATIVE_3D':
-        return <ChromeBadge label="3D_SHADER" variant="silver" size="sm" />;
-      case 'PRODUCT_DESIGN':
-        return <ChromeBadge label="ACUBI_UI" variant="silver" size="sm" />;
-      default:
-        return <ChromeBadge label={track} variant="dark" size="sm" />;
-    }
-  };
+  const roleTier = getRoleTier(member);
+  const styles = getRoleStyles(roleTier);
+
+  const displayName = member.fullName || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Club Member';
+  const roleTitle = member.role || member.roleTitle || (roleTier === 'SUPER_ADMIN' ? 'Super Admin' : roleTier === 'ADMIN' ? 'Admin' : 'Core Member');
 
   return (
     <div
@@ -34,55 +24,61 @@ export const OperativeRow: React.FC<OperativeRowProps> = ({ member, onSelect }) 
         onSelect(member);
       }}
       onMouseEnter={() => playHoverBeep()}
-      className="cursor-pointer bg-zinc-950/80 border border-zinc-800/80 hover:border-zinc-500 p-4 transition-all duration-200 group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 tech-corner-box hover:bg-zinc-900/40"
+      className={`p-3 sm:p-4 border transition-all cursor-pointer flex items-center justify-between gap-4 group select-none ${styles.cardBgClass} ${styles.cardBorderClass} ${styles.cardGlowClass}`}
     >
-      {/* Left: Avatar, Name & Role */}
+      {/* Left: Avatar & Identity */}
       <div className="flex items-center gap-3.5 min-w-0">
-        <div className="relative w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-700 overflow-hidden group-hover:border-white transition-colors">
-          <img
-            src={member.avatarUrl}
-            alt={member.fullName}
-            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all"
-          />
+        <div
+          className={`w-10 h-10 shrink-0 overflow-hidden flex items-center justify-center bg-black ${styles.avatarBorderClass}`}
+        >
+          {member.avatarUrl ? (
+            <img
+              src={member.avatarUrl}
+              alt={displayName}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <span className={`font-syne font-black text-sm uppercase ${styles.textColor}`}>
+              {displayName.charAt(0) || 'M'}
+            </span>
+          )}
         </div>
 
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-syne font-bold text-sm text-white group-hover:text-zinc-200 transition-colors truncate">
-              {member.fullName}
+            <span className="font-syne font-bold text-sm text-white group-hover:text-zinc-200 truncate">
+              {displayName}
             </span>
-            <span className="font-mono text-[9px] text-zinc-500">@{member.callsign}</span>
+            <span className={styles.badgeClass}>{styles.label}</span>
           </div>
-          <p className="font-mono text-[10px] text-zinc-400 truncate mt-0.5">
-            {member.roleTitle}
-          </p>
+
+          <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 truncate">
+            <span className={`font-bold ${styles.textColor}`}>{roleTitle}</span>
+            {member.branch && (
+              <>
+                <span className="text-zinc-600">•</span>
+                <span className="text-zinc-500">{member.branch} {member.semester ? `(${member.semester})` : ''}</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Center: Track & Badges */}
-      <div className="flex flex-wrap items-center gap-2">
-        {getTrackBadge(member.track)}
-        <span className="font-mono text-[9px] px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-400">
-          {member.opId}
-        </span>
-      </div>
-
-      {/* Right: Hours, Projects & Drawer Action */}
-      <div className="flex items-center gap-6 font-mono text-xs text-zinc-400 select-none w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-900">
-        <div className="text-left sm:text-right">
-          <div className="text-[8px] text-zinc-600">HOURS LOGGED</div>
-          <div className="font-bold text-white text-xs">{member.hoursContributed} HRS</div>
+      {/* Right: Track, Hours & Action Arrow */}
+      <div className="flex items-center gap-4 shrink-0">
+        <div className="hidden sm:block text-right font-mono text-[10px]">
+          <div className="text-zinc-300 font-bold">{member.hoursContributed || 0} HOURS</div>
+          <div className="text-zinc-500">{member.track || 'Web Development'}</div>
         </div>
 
-        <div className="text-left sm:text-right">
-          <div className="text-[8px] text-zinc-600">PROJECTS</div>
-          <div className="font-bold text-white text-xs">{member.projectsCount} SHIPPED</div>
-        </div>
-
-        <div className="w-8 h-8 rounded-none border border-zinc-800 group-hover:border-white flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors bg-zinc-900">
-          <ArrowUpRight size={14} />
+        <div className="w-8 h-8 flex items-center justify-center bg-zinc-900 border border-zinc-800 group-hover:border-zinc-500 group-hover:text-white text-zinc-400 transition-colors">
+          <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
         </div>
       </div>
     </div>
   );
 };
+export default OperativeRow;

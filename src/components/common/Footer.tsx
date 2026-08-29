@@ -1,114 +1,89 @@
 import React from 'react';
 import { NavTab } from './Navbar';
+import { playCyberClick } from './AudioEffects';
 
 interface FooterProps {
   setActiveTab: (tab: NavTab) => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
-  return (
-    <footer className="w-full bg-[#050507] border-t border-zinc-800/80 pt-12 pb-8 px-4 sm:px-6 lg:px-8 mt-20 relative overflow-hidden">
-      {/* Background blueprint grid */}
-      <div className="absolute inset-0 bg-blueprint-grid opacity-20 pointer-events-none" />
+  const navLinks: { id: NavTab; num: string; label: string }[] = [
+    { id: 'dashboard', num: '01', label: 'Dashboard' },
+    { id: 'roster', num: '02', label: 'Directory' },
+    { id: 'schedule', num: '03', label: 'Schedule' },
+    { id: 'profile', num: '04', label: 'Profile' },
+    { id: 'tickets', num: '05', label: 'Passes' },
+    { id: 'gallery', num: '06', label: 'Gallery' },
+  ];
 
-      <div className="max-w-7xl mx-auto relative z-10 space-y-10">
-        {/* Top Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-10 border-b border-zinc-800">
-          {/* Left Column: Brand & Manifesto */}
-          <div className="lg:col-span-5 space-y-3 font-mono">
-            <h3 className="text-2xl font-black font-syne text-white tracking-tight">
+  return (
+    <footer className="border-t border-zinc-800 bg-[#06060a] text-zinc-400 font-mono text-xs relative z-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
+          {/* Left Column: Mission */}
+          <div className="md:col-span-5 space-y-4">
+            <h3 className="font-syne font-black text-xl text-white tracking-tight">
               SKILL DEVELOPMENT CLUB
             </h3>
-            
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              An autonomous collective of student engineers, designers, researchers, and builders developing production software, 3D graphics, AI systems, and security tools.
+            <p className="text-xs text-zinc-400 leading-relaxed max-w-sm">
+              An active student technical community at CUCEK focused on upskilling, mentoring, daily hands-on coding sessions, talk sessions, and hackathons to prepare students for real-world careers.
             </p>
-
-            <div className="pt-2 text-[10px] text-zinc-500 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>ESTABLISHED 2023</span>
+            <div className="flex items-center gap-2 pt-2 text-[10px]">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-zinc-300 font-bold">ESTABLISHED 2025</span>
             </div>
           </div>
 
           {/* Center Column: Navigation */}
-          <div className="lg:col-span-3 space-y-3 font-mono">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+          <div className="md:col-span-3 space-y-4">
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
               NAVIGATION
-            </h4>
-            <ul className="space-y-1.5 text-xs text-zinc-400">
-              <li>
-                <button
-                  onClick={() => setActiveTab('dashboard')}
-                  className="hover:text-white transition-colors cursor-target"
-                >
-                  01 // DASHBOARD
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setActiveTab('roster')}
-                  className="hover:text-white transition-colors cursor-target"
-                >
-                  02 // DIRECTORY
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setActiveTab('schedule')}
-                  className="hover:text-white transition-colors cursor-target"
-                >
-                  03 // SCHEDULE
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setActiveTab('profile')}
-                  className="hover:text-white transition-colors cursor-target"
-                >
-                  04 // PROFILE
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setActiveTab('tickets')}
-                  className="hover:text-white transition-colors cursor-target"
-                >
-                  05 // PASSES
-                </button>
-              </li>
+            </div>
+            <ul className="space-y-2">
+              {navLinks.map((link) => (
+                <li key={link.id}>
+                  <button
+                    onClick={() => {
+                      playCyberClick();
+                      setActiveTab(link.id);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="hover:text-white transition-colors flex items-center gap-2 text-xs"
+                  >
+                    <span className="text-zinc-600 text-[10px]">{link.num}</span>
+                    <span>{link.label}</span>
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Right Column: ASCII Art Heart/Matrix (from moodboard) */}
-          <div className="lg:col-span-4 bg-zinc-950 p-4 border border-zinc-800 font-mono text-[9px] text-zinc-500 leading-tight space-y-2 select-none overflow-x-auto">
-            <div className="flex justify-between items-center text-zinc-400 pb-1 border-b border-zinc-900">
+          {/* Right Column: ASCII Love Badge */}
+          <div className="md:col-span-4 bg-[#09090f] border border-zinc-800/80 p-4 font-mono text-[10px] text-zinc-400 space-y-2 select-none shadow-inner">
+            <div className="flex items-center justify-between text-zinc-300 border-b border-zinc-800/80 pb-2">
               <span>SKILL DEVELOPMENT CLUB</span>
               <span>2026</span>
             </div>
-            <pre className="text-zinc-400 leading-[10px]">
-{`   .:::.   .:::.      +-----------------------+
-  :::::::.:::::::     | SDC DIGITAL MATRIX    |
-  :::::::::::::::     | LAT: 37.7749 N        |
-  ':::::::::::::'     | LNG: 122.4194 W       |
-    ':::::::::'       | ACCESS: VERIFIED      |
-      ':::::'         +-----------------------+
-        ':'           `}
+            <pre className="text-[9px] leading-tight text-zinc-400 font-mono overflow-x-auto py-1">
+{` . ::: .    . ::: .   +-----------------------------+
+:::::::::::::::::::::  | MADE FOR SDC WITH LOVE      |
+:::::::::::::::::::::  | BY SDC MEMBERS              |
+ ':::::::::::::::::'   | CUCEK CAMPUS                |
+   ':::::::::::::'     | COMMUNITY • UPSKILLING • WORK|
+     ':::::::::'       +-----------------------------+
+       ':::::'
+         ':'`}
             </pre>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-[10px] text-zinc-500">
-          <div className="flex items-center gap-3">
-            <div className="w-20 h-2.5 barcode-strip opacity-40" />
-            <span>SDC 2026</span>
-          </div>
-
-          <div className="text-zinc-500">
-            ALL RIGHTS RESERVED
-          </div>
+        {/* Bottom Sub-strip */}
+        <div className="mt-12 pt-6 border-t border-zinc-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-zinc-600">
+          <span className="tracking-widest">|||||||||||||| SDC CUCEK • 2026</span>
+          <span>SKILL DEVELOPMENT CLUB • ALL RIGHTS RESERVED</span>
         </div>
       </div>
     </footer>
   );
 };
+export default Footer;

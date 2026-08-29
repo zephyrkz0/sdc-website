@@ -1,115 +1,112 @@
 import React from 'react';
 import { ClubMember } from '../../types';
-import { HolographicCard3D } from '../3d/HolographicCard3D';
-import { ChromeBadge } from '../common/ChromeBadge';
-import { QRCodeSVG } from 'qrcode.react';
-import { Shield, Sparkles, Download, Cpu } from 'lucide-react';
-import { playCyberClick } from '../common/AudioEffects';
+import { QrCode, Sparkles } from 'lucide-react';
+import { getRoleTier, getRoleStyles } from '../../utils/roleUtils';
 
 interface OperativeIdCardProps {
-  member: ClubMember;
-  onDownloadCard?: () => void;
+  member: Partial<ClubMember>;
 }
 
-export const OperativeIdCard: React.FC<OperativeIdCardProps> = ({
-  member,
-  onDownloadCard,
-}) => {
-  const qrVerification = JSON.stringify({
-    opId: member.opId,
-    callsign: member.callsign,
-    tier: member.tier,
-    auth: 'SEC_OK_2026',
-  });
+export const OperativeIdCard: React.FC<OperativeIdCardProps> = ({ member }) => {
+  const roleTier = getRoleTier(member);
+  const styles = getRoleStyles(roleTier);
+
+  const displayName =
+    member.fullName ||
+    `${member.firstName || ''} ${member.lastName || ''}`.trim() ||
+    'Kasinath R';
+  const roleTitle =
+    member.role ||
+    member.roleTitle ||
+    (roleTier === 'SUPER_ADMIN' ? 'CLUB LEAD' : roleTier === 'ADMIN' ? 'ADMIN' : 'CLUB MEMBER');
+  const handle = member.username || member.callsign || 'zephyrkz0';
 
   return (
-    <div className="w-full max-w-sm mx-auto">
-      <HolographicCard3D intensity={18}>
-        <div
-          id="operative-id-card-node"
-          className="relative bg-gradient-to-b from-zinc-900 via-zinc-950 to-black border-2 border-zinc-500 p-6 tech-corner-box shadow-2xl overflow-hidden font-mono select-none"
-        >
-          {/* Top Lanyard Punch Slot */}
-          <div className="flex justify-center pb-4">
-            <div className="w-16 h-2.5 bg-zinc-950 border border-zinc-700 rounded-full" />
-          </div>
+    <div
+      className={`w-full max-w-[320px] p-5 rounded-none relative overflow-hidden font-mono select-none transition-all duration-300 ${styles.cardBgClass} ${styles.cardBorderClass} ${styles.cardGlowClass}`}
+    >
+      {/* Top Lanyard Cutout Slot */}
+      <div className="w-16 h-2 mx-auto bg-amber-500/80 rounded-full mb-4 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
 
-          {/* Top Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800 text-[9px] text-zinc-400">
-            <div className="flex items-center gap-1.5 font-bold text-white">
-              <span className="text-purple-400">✦</span> SDC // IDENT_SYS
-            </div>
-            <span className="px-1.5 py-0.2 bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold">
-              {member.opId}
-            </span>
-          </div>
-
-          {/* Member Photo & Callsign */}
-          <div className="mt-4 flex items-center gap-4">
-            <div className="relative w-20 h-20 bg-zinc-900 border-2 border-white/80 shrink-0 overflow-hidden">
-              <img
-                src={member.avatarUrl}
-                alt={member.fullName}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-scanline opacity-30 pointer-events-none" />
-            </div>
-
-            <div className="space-y-1 min-w-0">
-              <div className="text-[9px] text-purple-400 font-bold">
-                @{member.callsign}
-              </div>
-              <h3 className="font-syne font-black text-lg text-white truncate">
-                {member.fullName}
-              </h3>
-              <div className="text-[10px] text-zinc-400 truncate">
-                {member.roleTitle}
-              </div>
-            </div>
-          </div>
-
-          {/* Track and Location Spec */}
-          <div className="mt-4 grid grid-cols-2 gap-2 p-2 bg-zinc-900/60 border border-zinc-800 text-[9px]">
-            <div>
-              <div className="text-zinc-500">DOMAIN TRACK:</div>
-              <div className="font-bold text-zinc-200 truncate">{member.track}</div>
-            </div>
-            <div>
-              <div className="text-zinc-500">GRID LOC:</div>
-              <div className="font-bold text-zinc-200">{member.location}</div>
-            </div>
-          </div>
-
-          {/* Hours and Modules Status */}
-          <div className="mt-3 grid grid-cols-2 gap-2 text-center text-[9px]">
-            <div className="p-1.5 bg-zinc-900 border border-zinc-800">
-              <span className="text-zinc-500">LOGGED: </span>
-              <span className="font-bold text-white">{member.hoursContributed}h</span>
-            </div>
-            <div className="p-1.5 bg-zinc-900 border border-zinc-800">
-              <span className="text-zinc-500">STATUS: </span>
-              <span className="font-bold text-emerald-400">{member.status}</span>
-            </div>
-          </div>
-
-          {/* Bottom Bar: QR Code and Barcode */}
-          <div className="mt-4 pt-3 border-t border-zinc-800 flex items-center justify-between gap-3">
-            <div className="p-1 bg-white border border-white">
-              <QRCodeSVG value={qrVerification} size={48} level="M" />
-            </div>
-
-            <div className="flex-1 space-y-1 text-right">
-              <div className="w-full h-4 barcode-strip opacity-70" />
-              <div className="text-[8px] text-zinc-500 tracking-tighter">
-                CERT_SHA256_VALID_2026
-              </div>
-            </div>
-          </div>
-
-          {/* Holographic Watermark Sheen */}
-          <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-purple-500/10 rounded-full blur-xl pointer-events-none" />
+      {/* Pass Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-zinc-800 text-[10px] text-zinc-400">
+        <div className="flex items-center gap-1.5">
+          <Sparkles size={11} className={styles.textColor} />
+          <span className="font-bold text-white tracking-wider">SKILL DEVELOPMENT CLUB</span>
         </div>
-      </HolographicCard3D>
+        <span className="text-[9px] text-zinc-500 uppercase">OFFICIAL PASS</span>
+      </div>
+
+      {/* Role Badge */}
+      <div className="mt-3 flex justify-start">
+        <span className={styles.badgeClass}>{styles.label}</span>
+      </div>
+
+      {/* Avatar & Name Section */}
+      <div className="mt-4 flex items-center gap-3.5">
+        <div
+          className={`w-16 h-16 shrink-0 overflow-hidden flex items-center justify-center bg-black ${styles.avatarBorderClass}`}
+        >
+          {member.avatarUrl ? (
+            <img
+              src={member.avatarUrl}
+              alt={displayName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className={`font-syne font-black text-2xl uppercase ${styles.textColor}`}>
+              {displayName.charAt(0) || 'K'}
+            </span>
+          )}
+        </div>
+
+        <div className="min-w-0 space-y-0.5">
+          <h3 className="font-syne font-black text-base text-white truncate">{displayName}</h3>
+          <div className="text-[11px] font-mono font-bold text-amber-400 truncate">
+            {roleTitle}
+          </div>
+        </div>
+      </div>
+
+      {/* Academic & Track Meta */}
+      <div className="mt-4 p-2.5 bg-black/60 border border-zinc-800 space-y-1.5 text-[9px]">
+        <div className="flex justify-between text-zinc-400">
+          <span>TRACK:</span>
+          <span className="text-white font-bold truncate max-w-[140px]">
+            {member.track || 'AI & Machine Learning'}
+          </span>
+        </div>
+        <div className="flex justify-between text-zinc-400">
+          <span>BRANCH • SEM:</span>
+          <span className="text-zinc-300 font-bold">
+            {member.branch || 'Computer'} {member.semester || 'S1'}
+          </span>
+        </div>
+      </div>
+
+      {/* Status Bar */}
+      <div className="mt-3 flex items-center justify-between text-[9px] text-zinc-500 font-mono">
+        <span>
+          HOURS: <strong className="text-zinc-300">{member.hoursContributed || 0}h</strong>
+        </span>
+        <span className="text-emerald-400 flex items-center gap-1 font-bold">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          STATUS: ACTIVE
+        </span>
+      </div>
+
+      {/* Barcode & QR Code Footer */}
+      <div className="mt-4 pt-3 border-t border-zinc-800 flex items-center justify-between text-[8px] text-zinc-500">
+        <div className="w-9 h-9 border border-zinc-700 bg-white/5 flex items-center justify-center">
+          <QrCode size={22} className="text-white" />
+        </div>
+
+        <div className="text-right space-y-0.5">
+          <div className="font-mono tracking-widest text-zinc-400 text-[10px]">||| | |||| | |||||</div>
+          <div className={`font-bold tracking-widest ${styles.textColor}`}>{styles.label}</div>
+        </div>
+      </div>
     </div>
   );
 };
+export default OperativeIdCard;

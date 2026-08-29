@@ -8,7 +8,13 @@ export const toggleAudio = (): boolean => {
   return soundEnabled;
 };
 
+export const toggleGlobalAudio = (): boolean => {
+  soundEnabled = !soundEnabled;
+  return !soundEnabled; // returns whether it is muted
+};
+
 export const isAudioEnabled = (): boolean => soundEnabled;
+export const isAudioMuted = (): boolean => !soundEnabled;
 
 const getAudioContext = (): AudioContext | null => {
   if (typeof window === 'undefined') return null;

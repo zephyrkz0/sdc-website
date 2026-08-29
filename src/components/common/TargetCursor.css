@@ -1,35 +1,72 @@
 .target-cursor-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-  z-index: 9999;
-  mix-blend-mode: difference;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+  z-index: 2147483647 !important;
   transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+  will-change: transform, opacity;
+}
+
+.target-cursor-wrapper.is-visible {
+  opacity: 1;
+}
+
+/* Custom cursor active state on desktop */
+html.has-custom-cursor,
+html.has-custom-cursor body,
+html.has-custom-cursor button,
+html.has-custom-cursor a,
+html.has-custom-cursor input,
+html.has-custom-cursor select,
+html.has-custom-cursor textarea,
+html.has-custom-cursor [role="button"],
+html.has-custom-cursor .cursor-pointer,
+html.has-custom-cursor .cursor-target {
+  cursor: none !important;
+}
+
+/* On pure small mobile screens */
+@media (hover: none) and (pointer: coarse) and (max-width: 640px) {
+  .target-cursor-wrapper {
+    display: none !important;
+  }
+  html.has-custom-cursor,
+  html.has-custom-cursor body,
+  html.has-custom-cursor button,
+  html.has-custom-cursor a {
+    cursor: auto !important;
+  }
 }
 
 .target-cursor-dot {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 4px;
-  height: 4px;
-  background: #fff;
+  width: 5px;
+  height: 5px;
+  background: #ffffff;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  will-change: transform;
+  box-shadow: 0 0 6px #ffffff, 0 0 14px rgba(192, 132, 252, 1);
+  will-change: transform, scale;
+  pointer-events: none;
 }
 
 .target-cursor-corner {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 12px;
-  height: 12px;
-  border: 3px solid #fff;
-  will-change: transform;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ffffff;
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.9));
+  will-change: transform, border-color;
+  pointer-events: none;
 }
 
 .corner-tl {
