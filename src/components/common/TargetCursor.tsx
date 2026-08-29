@@ -1,11 +1,9 @@
-import React, { useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { gsap } from 'gsap';
 import './TargetCursor.css';
 
-// A position: fixed element is positioned relative to the viewport UNLESS an
-// ancestor establishes a containing block (transform, perspective, filter,
-// will-change of those, or contain). When that happens, the cursor's translate
-// no longer maps to viewport coordinates, so we measure and compensate for it.
+// Calculate containing block offset if fixed positioning is affected by ancestor transforms
 const getContainingBlock = (element: HTMLElement | null): HTMLElement | null => {
   let node = element?.parentElement;
   while (node && node !== document.documentElement) {
@@ -43,13 +41,13 @@ export interface TargetCursorProps {
 }
 
 export const TargetCursor: React.FC<TargetCursorProps> = ({
-  targetSelector = '.cursor-target, button, a, input, select, textarea, [data-interactive="true"]',
-  spinDuration = 2,
+  targetSelector = '.cursor-target, button, a, input, select, textarea, [data-interactive="true"], .interactive-card, .tab-btn',
+  spinDuration = 2.5,
   hideDefaultCursor = true,
   hoverDuration = 0.2,
   parallaxOn = true,
   cursorColor = '#ffffff',
-  cursorColorOnTarget,
+  cursorColorOnTarget = '#c084fc',
 }) => {
   const cursorRef = useRef<HTMLDivElement | null>(null);
   const cornersRef = useRef<NodeListOf<HTMLElement> | null>(null);
@@ -62,20 +60,13 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
   const tickerFnRef = useRef<(() => void) | null>(null);
   const activeStrengthRef = useRef(0);
 
-  const isMobile = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const isSmallScreen = window.innerWidth <= 768;
-    const userAgent = navigator.userAgent || navigator.vendor || (window as unknown as { opera?: string }).opera || '';
-    const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
-    const isMobileUserAgent = mobileRegex.test(userAgent.toLowerCase());
-    return (hasTouchScreen && isSmallScreen) || isMobileUserAgent;
-  }, []);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
 
   const constants = useMemo(
     () => ({
       borderWidth: 3,
-      cornerSize: 12,
+      cornerSize: 14,
     }),
     []
   );
@@ -86,23 +77,32 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
     gsap.to(cursorRef.current, {
       x: x - offsetX,
       y: y - offsetY,
-      duration: 0.1,
+      duration: 0.08,
       ease: 'power3.out',
     });
   }, []);
 
   useEffect(() => {
-    if (isMobile || !cursorRef.current) return;
+    // Only detect purely mobile small-screen touch devices without pointer movement
+    if (typeof window === 'undefined') return;
 
-    const originalCursor = document.body.style.cursor;
+    const isSmallPhone = window.innerWidth <= 640 && window.matchMedia?.('(pointer: coarse) and (hover: none)')?.matches;
+    if (isSmallPhone) {
+      setIsMobileDevice(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isMobileDevice || !cursorRef.current) return;
+
     if (hideDefaultCursor) {
-      document.body.style.cursor = 'none';
+      document.documentElement.classList.add('has-custom-cursor');
     }
 
     const cursor = cursorRef.current;
     cornersRef.current = cursor.querySelectorAll<HTMLElement>('.target-cursor-corner');
-
     containingBlockRef.current = getContainingBlock(cursor);
+
     const getOffset = () => getContainingBlockOffset(containingBlockRef.current);
 
     let activeTarget: Element | null = null;
@@ -116,14 +116,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
       currentLeaveHandler = null;
     };
 
-    const initialOffset = getOffset();
-    gsap.set(cursor, {
-      xPercent: -50,
-      yPercent: -50,
-      x: window.innerWidth / 2 - initialOffset.x,
-      y: window.innerHeight / 2 - initialOffset.y,
-    });
-
+    // Spin animation for free-roaming crosshair corners
     const createSpinTimeline = () => {
       if (spinTl.current) {
         spinTl.current.kill();
@@ -135,6 +128,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
 
     createSpinTimeline();
 
+    // Ticker function to smoothly snap/track corners to target bounding box
     const tickerFn = () => {
       if (!targetCornerPositionsRef.current || !cursorRef.current || !cornersRef.current) {
         return;
@@ -157,7 +151,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
         const finalX = currentX + (targetX - currentX) * strength;
         const finalY = currentY + (targetY - currentY) * strength;
 
-        const duration = strength >= 0.99 ? (parallaxOn ? 0.2 : 0) : 0.05;
+        const duration = strength >= 0.99 ? (parallaxOn ? 0.15 : 0) : 0.05;
 
         gsap.to(corner, {
           x: finalX,
@@ -171,8 +165,23 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
 
     tickerFnRef.current = tickerFn;
 
-    const moveHandler = (e: MouseEvent) => moveCursor(e.clientX, e.clientY);
-    window.addEventListener('mousemove', moveHandler);
+    let hasInitiallyMoved = false;
+
+    const moveHandler = (e: MouseEvent) => {
+      if (!hasInitiallyMoved) {
+        hasInitiallyMoved = true;
+        setIsVisible(true);
+        setIsMobileDevice(false);
+        const { x: offsetX, y: offsetY } = getOffset();
+        gsap.set(cursor, {
+          x: e.clientX - offsetX,
+          y: e.clientY - offsetY,
+        });
+      }
+      moveCursor(e.clientX, e.clientY);
+    };
+
+    window.addEventListener('mousemove', moveHandler, { passive: true });
 
     const scrollHandler = () => {
       if (!activeTarget || !cursorRef.current) return;
@@ -183,28 +192,32 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
       const isStillOverTarget =
         elementUnderMouse &&
         (elementUnderMouse === activeTarget || elementUnderMouse.closest(targetSelector) === activeTarget);
-      if (!isStillOverTarget) {
-        if (currentLeaveHandler) {
-          currentLeaveHandler();
-        }
+      if (!isStillOverTarget && currentLeaveHandler) {
+        currentLeaveHandler();
       }
     };
     window.addEventListener('scroll', scrollHandler, { passive: true });
 
     const mouseDownHandler = () => {
       if (!dotRef.current) return;
-      gsap.to(dotRef.current, { scale: 0.7, duration: 0.3 });
-      gsap.to(cursorRef.current, { scale: 0.9, duration: 0.2 });
+      gsap.to(dotRef.current, { scale: 0.6, duration: 0.15 });
+      gsap.to(cursorRef.current, { scale: 0.9, duration: 0.15 });
     };
 
     const mouseUpHandler = () => {
       if (!dotRef.current) return;
-      gsap.to(dotRef.current, { scale: 1, duration: 0.3 });
-      gsap.to(cursorRef.current, { scale: 1, duration: 0.2 });
+      gsap.to(dotRef.current, { scale: 1, duration: 0.25, ease: 'back.out(2)' });
+      gsap.to(cursorRef.current, { scale: 1, duration: 0.2, ease: 'power2.out' });
     };
 
     window.addEventListener('mousedown', mouseDownHandler);
     window.addEventListener('mouseup', mouseUpHandler);
+
+    const mouseEnterWindow = () => setIsVisible(true);
+    const mouseLeaveWindow = () => setIsVisible(false);
+
+    document.addEventListener('mouseenter', mouseEnterWindow);
+    document.addEventListener('mouseleave', mouseLeaveWindow);
 
     const enterHandler = (e: MouseEvent) => {
       const directTarget = e.target as HTMLElement | null;
@@ -253,8 +266,6 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
       const rect = target.getBoundingClientRect();
       const { borderWidth, cornerSize } = constants;
       const { x: offsetX, y: offsetY } = getOffset();
-      const cursorX = Number(gsap.getProperty(cursorRef.current, 'x'));
-      const cursorY = Number(gsap.getProperty(cursorRef.current, 'y'));
 
       targetCornerPositionsRef.current = [
         { x: rect.left - borderWidth - offsetX, y: rect.top - borderWidth - offsetY },
@@ -274,11 +285,14 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
         ease: 'power2.out',
       });
 
+      const cursorX = Number(gsap.getProperty(cursorRef.current, 'x'));
+      const cursorY = Number(gsap.getProperty(cursorRef.current, 'y'));
+
       corners.forEach((corner, i) => {
         gsap.to(corner, {
           x: targetCornerPositionsRef.current![i].x - cursorX,
           y: targetCornerPositionsRef.current![i].y - cursorY,
-          duration: 0.2,
+          duration: 0.18,
           ease: 'power2.out',
         });
       });
@@ -325,7 +339,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
               {
                 x: positions[index].x,
                 y: positions[index].y,
-                duration: 0.3,
+                duration: 0.25,
                 ease: 'power3.out',
               },
               0
@@ -378,13 +392,15 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
       window.removeEventListener('resize', resizeHandler);
       window.removeEventListener('mousedown', mouseDownHandler);
       window.removeEventListener('mouseup', mouseUpHandler);
+      document.removeEventListener('mouseenter', mouseEnterWindow);
+      document.removeEventListener('mouseleave', mouseLeaveWindow);
 
       if (activeTarget) {
         cleanupTarget(activeTarget);
       }
 
       spinTl.current?.kill();
-      document.body.style.cursor = originalCursor;
+      document.documentElement.classList.remove('has-custom-cursor');
 
       isActiveRef.current = false;
       targetCornerPositionsRef.current = null;
@@ -396,29 +412,22 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
     moveCursor,
     constants,
     hideDefaultCursor,
-    isMobile,
+    isMobileDevice,
     hoverDuration,
     parallaxOn,
     cursorColor,
     cursorColorOnTarget,
   ]);
 
-  useEffect(() => {
-    if (isMobile || !cursorRef.current || !spinTl.current) return;
-    if (spinTl.current.isActive()) {
-      spinTl.current.kill();
-      spinTl.current = gsap
-        .timeline({ repeat: -1 })
-        .to(cursorRef.current, { rotation: '+=360', duration: spinDuration, ease: 'none' });
-    }
-  }, [spinDuration, isMobile]);
-
-  if (isMobile) {
+  if (isMobileDevice) {
     return null;
   }
 
-  return (
-    <div ref={cursorRef} className="target-cursor-wrapper">
+  const cursorElement = (
+    <div
+      ref={cursorRef}
+      className={`target-cursor-wrapper ${isVisible ? 'is-visible' : ''}`}
+    >
       <div ref={dotRef} className="target-cursor-dot" style={{ backgroundColor: cursorColor }} />
       <div className="target-cursor-corner corner-tl" style={{ borderColor: cursorColor }} />
       <div className="target-cursor-corner corner-tr" style={{ borderColor: cursorColor }} />
@@ -426,6 +435,8 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
       <div className="target-cursor-corner corner-bl" style={{ borderColor: cursorColor }} />
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(cursorElement, document.body) : cursorElement;
 };
 
 export default TargetCursor;

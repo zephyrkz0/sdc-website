@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Mirano';
+  src: url('/assets/MiranoExtendedFreebie-Light.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Mirano';
+  src: url('/assets/MiranoExtendedFreebie-LightItalic.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenBoek';
+  src: url('/assets/openboek-notregular.otf') format('opentype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --font-mirano: 'Mirano', 'Syne', sans-serif;
+    --font-syne: 'Mirano', 'Syne', sans-serif;
+    --font-courbe: 'Mirano', 'Syne', sans-serif;
+    --font-openboek: 'OpenBoek', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-gothic: 'UnifrakturMaguntia', cursive;
+    --font-cinzel: 'Cinzel Decorative', serif;
+    --font-grotesk: 'Space Grotesk', sans-serif;
+    --font-sans: 'Inter', sans-serif;
+  }
+
+  html,
+  body,
+  #root {
+    font-family: var(--font-sans);
+    background-color: #08080a;
+    color: #e4e4e7;
+    cursor: default;
+    min-height: 100%;
+  }
+}
+
+/* Acubi Typography Utilities */
+.font-mirano {
+  font-family: var(--font-mirano);
+}
+.font-courbe {
+  font-family: var(--font-mirano);
+}
+.font-openboek {
+  font-family: var(--font-openboek), sans-serif;
+}
+.font-syne {
+  font-family: var(--font-mirano);
+}
+.font-mono {
+  font-family: var(--font-mono);
+}
+.font-gothic {
+  font-family: var(--font-gothic);
+}
+.font-cinzel {

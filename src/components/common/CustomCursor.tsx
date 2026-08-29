@@ -47,7 +47,7 @@ export const CustomCursor: React.FC = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden transition-opacity duration-300">
+    <div className="pointer-events-none fixed inset-0 z-[2147483647] overflow-hidden transition-opacity duration-300">
       {/* Precision Center Dot */}
       <motion.div
         className="fixed top-0 left-0 w-1.5 h-1.5 bg-white rounded-full mix-blend-difference"

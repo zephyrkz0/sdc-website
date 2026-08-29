@@ -55,12 +55,12 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
       eventId: currentEvent?.id || 'evt-01',
       eventTitle: currentEvent?.title || (targetEvent ? targetEvent.title : 'SDC_EVENT'),
       eventDate: currentEvent?.date || (targetEvent ? targetEvent.date : '2026-09-18'),
-      eventTime: 'time' in (currentEvent || {}) ? (currentEvent as ClubEvent).time : '18:00 EST',
-      eventLocation: currentEvent?.location || (targetEvent ? targetEvent.location : 'Sector 01 Complex'),
-      attendeeName: attendeeName || currentUser.fullName,
-      attendeeCallsign: attendeeCallsign || currentUser.callsign,
+      eventTime: 'time' in (currentEvent || {}) ? (currentEvent as any).time : '17:30 - 19:30',
+      eventLocation: currentEvent?.location || (targetEvent ? (targetEvent as any).location || (targetEvent as any).venue : 'Sector 01 Complex') || 'Sector 01 Complex',
+      attendeeName: attendeeName || currentUser.fullName || 'Operative',
+      attendeeCallsign: attendeeCallsign || currentUser.callsign || currentUser.username || 'operative',
       attendeeEmail,
-      attendeeRole: currentUser.roleTitle,
+      attendeeRole: currentUser.roleTitle || currentUser.role || 'Member',
       attendeeTrack: track,
       seatTier,
       qrPayload: JSON.stringify({
@@ -173,10 +173,10 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
                 <label className="block text-zinc-400 mb-1.5 font-bold">SELECT SEAT / ACCESS TIER</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { id: 'GENERAL_OPERATIVE', label: 'OPERATIVE' },
-                    { id: 'HACKER_ACCESS', label: 'HACKER VIP' },
+                    { id: 'GENERAL_OPERATIVE', label: 'MEMBER' },
+                    { id: 'HACKER_ACCESS', label: 'SPEAKER VIP' },
                     { id: 'VIP_SPEAKER', label: 'SPEAKER' },
-                    { id: 'PRESS_EDITORIAL', label: 'PRESS ZINE' },
+                    { id: 'PRESS_EDITORIAL', label: 'PRESS / MEDIA' },
                   ].map((tier) => (
                     <button
                       key={tier.id}
@@ -207,7 +207,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-zinc-400 mb-1">OPERATIVE CALLSIGN (@)</label>
+                  <label className="block text-zinc-400 mb-1">USERNAME / HANDLE (@)</label>
                   <input
                     type="text"
                     required

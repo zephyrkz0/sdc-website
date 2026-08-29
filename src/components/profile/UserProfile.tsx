@@ -1,59 +1,103 @@
-import React, { useState } from 'react';
-import { ClubMember, ProjectPortfolioItem, DomainTrack } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { ClubMember } from '../../types';
 import { OperativeIdCard } from './OperativeIdCard';
-import { ProjectPortfolio } from './ProjectPortfolio';
-import { SkillHexGrid } from './SkillHexGrid';
-import { BlueprintHeader } from '../common/BlueprintHeader';
-import { ChromeBadge } from '../common/ChromeBadge';
-import { Edit3, Check, Award, Clock, BookOpen, Terminal, Sparkles, Shield, User } from 'lucide-react';
+import {
+  Edit3,
+  Check,
+  Sparkles,
+  Lock,
+  Camera,
+  Trash2,
+  AlertTriangle,
+  X,
+  User,
+  LogIn,
+} from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import html2canvas from 'html2canvas';
+import { memberService } from '../../services/memberService';
+import { getRoleTier, getRoleStyles } from '../../utils/roleUtils';
 
 interface UserProfileProps {
-  userProfile: ClubMember;
-  onUpdateProfile: (updated: ClubMember) => void;
+  userProfile?: ClubMember;
+  onUpdateProfile?: (updated: ClubMember) => void;
 }
 
 export const UserProfile: React.FC<UserProfileProps> = ({
-  userProfile,
+  userProfile: propProfile,
   onUpdateProfile,
 }) => {
+  const { currentUser, updateUserProfile, setAuthModalOpen, deleteAccount } = useAuth();
+
   const [isEditing, setIsEditing] = useState(false);
-  const [callsign, setCallsign] = useState(userProfile.callsign);
-  const [fullName, setFullName] = useState(userProfile.fullName);
-  const [roleTitle, setRoleTitle] = useState(userProfile.roleTitle);
-  const [bio, setBio] = useState(userProfile.bio);
-  const [track, setTrack] = useState<DomainTrack>(userProfile.track);
-  const [location, setLocation] = useState(userProfile.location);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [branch, setBranch] = useState('Computer');
+  const [semester, setSemester] = useState('S1');
+  const [bio, setBio] = useState('');
+  const [track, setTrack] = useState('AI & Machine Learning');
+  const [skills, setSkills] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    playCyberClick();
-    playSuccessChime();
+  // Deletion modal
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteErrorMsg, setDeleteErrorMsg] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
-    const updated: ClubMember = {
-      ...userProfile,
-      callsign: callsign.toUpperCase(),
-      fullName,
-      roleTitle,
-      bio,
-      track,
-      location,
-    };
+  useEffect(() => {
+    const profile = currentUser || propProfile;
+    if (profile) {
+      setFirstName(profile.firstName || profile.fullName?.split(' ')[0] || '');
+      setLastName(profile.lastName || profile.fullName?.split(' ').slice(1).join(' ') || '');
+      setBranch(profile.branch || 'Computer');
+      setSemester(profile.semester || 'S1');
+      setBio(profile.bio || 'Club lead.');
+      setTrack(profile.track || 'AI & Machine Learning');
+      setSkills((profile.skills && profile.skills.length > 0 ? profile.skills : ['ollama', 'agentic ai', 'full stack', 'python', 'competitive prog']).join(', '));
+      setAvatarUrl(profile.avatarUrl || '');
+      setGithubUrl(profile.githubUrl || profile.github || '');
+      setLinkedinUrl(profile.linkedinUrl || profile.linkedin || '');
+    }
+  }, [currentUser, propProfile]);
 
-    onUpdateProfile(updated);
-    setIsEditing(false);
-  };
+  if (!currentUser && !propProfile) {
+    return (
+      <div className="space-y-8 font-mono">
+        <div className="space-y-2 border-b border-zinc-800 pb-4">
+          <h2 className="text-3xl sm:text-4xl font-syne font-black tracking-tight text-white uppercase">
+            MEMBER PROFILE
+          </h2>
+          <p className="text-xs text-zinc-400">
+            Manage your personal profile, credentials, project showcase, and member pass.
+          </p>
+        </div>
 
-  const handleAddProject = (newProject: ProjectPortfolioItem) => {
-    const updated: ClubMember = {
-      ...userProfile,
-      projects: [newProject, ...userProfile.projects],
-      projectsCount: userProfile.projectsCount + 1,
-      hoursContributed: userProfile.hoursContributed + 15,
-    };
-    onUpdateProfile(updated);
-  };
+        <div className="max-w-md mx-auto p-8 bg-zinc-950 border border-zinc-800 text-center space-y-4">
+          <Lock size={28} className="mx-auto text-zinc-400" />
+          <h3 className="font-syne font-bold text-lg text-white">SIGN IN REQUIRED</h3>
+          <p className="text-xs text-zinc-400">Please sign in to view and manage your profile pass.</p>
+          <button
+            onClick={() => {
+              playCyberClick();
+              setAuthModalOpen(true);
+            }}
+            className="px-6 py-2.5 bg-white text-black font-bold uppercase text-xs"
+          >
+            SIGN IN / REGISTER
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const activeUser = currentUser || propProfile!;
+  const roleTier = getRoleTier(activeUser);
+  const roleStyles = getRoleStyles(roleTier);
 
   const handleDownloadIdPass = async () => {
     playCyberClick();
@@ -63,201 +107,255 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     try {
       const canvas = await html2canvas(node, {
         scale: 3,
-        backgroundColor: '#08080a',
+        backgroundColor: '#000000',
         useCORS: true,
       });
-      const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = `${userProfile.opId}_ID_PASS.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.download = `SDC_PASS_${activeUser.username || 'PASS'}.png`;
       link.click();
-      playSuccessChime();
     } catch (err) {
-      console.error('Error exporting ID card:', err);
+      console.error(err);
     }
   };
 
-  return (
-    <div className="space-y-16">
-      {/* SECTION HEADER */}
-      <BlueprintHeader
-        stepNumber="04"
-        tag="PROFILE"
-        title="MEMBER PROFILE"
-        subtitle="Manage your club identity, digital pass, and project portfolio."
-      />
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    playCyberClick();
 
-      {/* TOP GRID: 3D ID CARD & PERSONAL TELEMETRY */}
+    const skillsArray = skills.split(',').map((s) => s.trim()).filter(Boolean);
+    const updatedData: Partial<ClubMember> = {
+      firstName,
+      lastName,
+      fullName: `${firstName} ${lastName}`.trim() || activeUser.fullName,
+      bio,
+      track,
+      branch,
+      semester,
+      skills: skillsArray,
+      avatarUrl,
+      githubUrl,
+      linkedinUrl,
+    };
+
+    if (currentUser) {
+      updateUserProfile(updatedData as any);
+      try {
+        await memberService.createOrUpdateMember({
+          userId: currentUser.id,
+          username: currentUser.username,
+          email: currentUser.email,
+          ...updatedData,
+        });
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+
+    if (onUpdateProfile) {
+      onUpdateProfile({ ...activeUser, ...updatedData } as ClubMember);
+    }
+
+    playSuccessChime();
+    setIsEditing(false);
+  };
+
+  return (
+    <div className="space-y-8 animate-fade-in font-mono">
+      {/* Header (Frame 11) */}
+      <div className="space-y-2 border-b border-zinc-800 pb-4">
+        <h2 className="text-3xl sm:text-4xl font-syne font-black tracking-tight text-white uppercase">
+          MEMBER PROFILE
+        </h2>
+        <p className="text-xs text-zinc-400">
+          Manage your personal profile, credentials, project showcase, and member pass.
+        </p>
+      </div>
+
+      {/* Main Grid: Left Vertical Pass & Right Profile Info Box (Frame 11) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left: 3D Operative ID Card */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-mono text-xs font-bold text-white uppercase flex items-center gap-2">
-              <span className="text-zinc-500">//</span> PHYSICAL_ID_BADGE
-            </h4>
+        {/* Left Column: ID Pass */}
+        <div className="lg:col-span-5 space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-zinc-400 font-bold">Member Pass</span>
             <button
               onClick={handleDownloadIdPass}
-              className="font-mono text-[10px] text-purple-400 hover:text-purple-300 underline"
+              className="text-purple-400 hover:text-purple-300 transition-colors"
             >
-              [EXPORT PNG PASS]
+              [Export PNG Pass]
             </button>
           </div>
 
-          <OperativeIdCard member={userProfile} onDownloadCard={handleDownloadIdPass} />
+          <div id="operative-id-card-node" className="flex justify-center">
+            <OperativeIdCard
+              member={{
+                ...activeUser,
+                firstName,
+                lastName,
+                fullName: `${firstName} ${lastName}`.trim() || activeUser.fullName,
+                bio,
+                track,
+                branch,
+                semester,
+                avatarUrl,
+              }}
+            />
+          </div>
         </div>
 
-        {/* Right: Editable Profile Dossier & Achievements */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* Identity Card Details / Edit Form */}
-          <div className="bg-zinc-950 border border-zinc-800 p-6 tech-corner-box">
-            <div className="flex items-center justify-between pb-4 border-b border-zinc-800 font-mono text-[10px]">
-              <div className="flex items-center gap-2">
-                <User size={13} className="text-purple-400" />
-                <span className="font-bold text-white">OPERATIVE CREDENTIALS</span>
-                <span className="text-zinc-500">// {userProfile.opId}</span>
+        {/* Right Column: Glowing Golden Profile Information Box (Frame 11) */}
+        <div
+          className={`lg:col-span-7 p-6 space-y-6 select-none ${roleStyles.cardBgClass} ${roleStyles.cardBorderClass} ${roleStyles.cardGlowClass}`}
+        >
+          {/* Top Bar with Profile Information & Role Badge */}
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+            <div className="flex items-center gap-2">
+              <User size={16} className={roleStyles.textColor} />
+              <span className="font-bold text-white text-xs uppercase tracking-wider">
+                PROFILE INFORMATION
+              </span>
+              <span className={roleStyles.badgeClass}>{roleStyles.label}</span>
+            </div>
+
+            <button
+              onClick={() => {
+                playCyberClick();
+                setIsEditing(!isEditing);
+              }}
+              className="px-3 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-white text-white text-xs uppercase font-bold flex items-center gap-1.5 transition-all"
+            >
+              <Edit3 size={13} />
+              <span>{isEditing ? 'CANCEL' : 'EDIT PROFILE'}</span>
+            </button>
+          </div>
+
+          {isEditing ? (
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs font-mono">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-zinc-400 text-[10px] mb-1">FIRST NAME</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 text-[10px] mb-1">LAST NAME</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 text-[10px] mb-1">ABOUT & SUMMARY</label>
+                <textarea
+                  rows={2}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-zinc-400 text-[10px] mb-1">BRANCH</label>
+                  <input
+                    type="text"
+                    value={branch}
+                    onChange={(e) => setBranch(e.target.value)}
+                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 text-[10px] mb-1">SEMESTER</label>
+                  <input
+                    type="text"
+                    value={semester}
+                    onChange={(e) => setSemester(e.target.value)}
+                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 text-[10px] mb-1">CORE SKILLS (comma-separated)</label>
+                <input
+                  type="text"
+                  value={skills}
+                  onChange={(e) => setSkills(e.target.value)}
+                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                />
               </div>
 
               <button
-                onClick={() => {
-                  playCyberClick();
-                  setIsEditing(!isEditing);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1 bg-zinc-900 border border-zinc-700 hover:border-white text-zinc-200 hover:text-white transition-colors"
+                type="submit"
+                className="px-5 py-2 bg-white text-black font-bold uppercase text-xs hover:bg-zinc-200"
               >
-                <Edit3 size={11} />
-                <span>{isEditing ? 'CANCEL EDIT' : 'EDIT IDENTITY'}</span>
+                SAVE CHANGES
               </button>
-            </div>
-
-            {isEditing ? (
-              <form onSubmit={handleSaveProfile} className="mt-5 space-y-4 font-mono text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-zinc-400 mb-1">CALLSIGN (@)</label>
-                    <input
-                      type="text"
-                      value={callsign}
-                      onChange={(e) => setCallsign(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none focus:border-zinc-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-zinc-400 mb-1">FULL NAME</label>
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none focus:border-zinc-500"
-                    />
-                  </div>
+            </form>
+          ) : (
+            <div className="space-y-4 text-xs font-mono">
+              {/* 4 Info Boxes (Frame 11) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-black/60 border border-zinc-800 p-3 space-y-1">
+                  <span className="text-zinc-500 text-[9px] uppercase block">NAME</span>
+                  <span className="font-bold text-white truncate block">
+                    {activeUser.fullName || `${firstName} ${lastName}`.trim() || 'Kasinath R'}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-zinc-400 mb-1">ROLE TITLE</label>
-                    <input
-                      type="text"
-                      value={roleTitle}
-                      onChange={(e) => setRoleTitle(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none focus:border-zinc-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-zinc-400 mb-1">DOMAIN TRACK</label>
-                    <select
-                      value={track}
-                      onChange={(e) => setTrack(e.target.value as DomainTrack)}
-                      className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none"
-                    >
-                      <option value="CORE_CODE">CORE_CODE</option>
-                      <option value="GENERATIVE_AI">GENERATIVE_AI</option>
-                      <option value="CYBER_SECURITY">CYBER_SECURITY</option>
-                      <option value="CREATIVE_3D">CREATIVE_3D</option>
-                      <option value="PRODUCT_DESIGN">PRODUCT_DESIGN</option>
-                    </select>
-                  </div>
+                <div className="bg-black/60 border border-zinc-800 p-3 space-y-1">
+                  <span className="text-zinc-500 text-[9px] uppercase block">HANDLE</span>
+                  <span className="font-bold text-purple-300 truncate block">
+                    @{activeUser.username || 'zephyrkz0'}
+                  </span>
                 </div>
 
-                <div>
-                  <label className="block text-zinc-400 mb-1">GRID LOCATION</label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none focus:border-zinc-500"
-                  />
+                <div className="bg-black/60 border border-zinc-800 p-3 space-y-1">
+                  <span className="text-zinc-500 text-[9px] uppercase block">BRANCH • SEM</span>
+                  <span className="font-bold text-zinc-300 truncate block">
+                    {branch} {semester}
+                  </span>
                 </div>
 
-                <div>
-                  <label className="block text-zinc-400 mb-1">BIO / STATEMENT</label>
-                  <textarea
-                    rows={3}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none focus:border-zinc-500"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 border border-zinc-800 text-zinc-400 hover:text-white"
-                  >
-                    CANCEL
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 bg-white text-black font-bold uppercase hover:bg-zinc-200"
-                  >
-                    SAVE PROFILE
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="mt-5 space-y-4 font-mono">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <h3 className="font-syne font-black text-2xl text-white">
-                      {userProfile.fullName}
-                    </h3>
-                    <div className="text-xs text-purple-400">@{userProfile.callsign}</div>
-                  </div>
-                  <ChromeBadge label={userProfile.track} variant="holo" />
-                </div>
-
-                <p className="text-xs text-zinc-300 leading-relaxed">
-                  {userProfile.bio}
-                </p>
-
-                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-zinc-900 text-center">
-                  <div className="p-2.5 bg-zinc-900/60 border border-zinc-800">
-                    <div className="text-[9px] text-zinc-500">HOURS LOGGED</div>
-                    <div className="text-base font-bold text-white mt-0.5">{userProfile.hoursContributed}h</div>
-                  </div>
-                  <div className="p-2.5 bg-zinc-900/60 border border-zinc-800">
-                    <div className="text-[9px] text-zinc-500">MODULES</div>
-                    <div className="text-base font-bold text-white mt-0.5">{userProfile.completedModules}</div>
-                  </div>
-                  <div className="p-2.5 bg-zinc-900/60 border border-zinc-800">
-                    <div className="text-[9px] text-zinc-500">REPOSITORIES</div>
-                    <div className="text-base font-bold text-white mt-0.5">{userProfile.projectsCount}</div>
-                  </div>
+                <div className="bg-black/60 border border-zinc-800 p-3 space-y-1">
+                  <span className="text-zinc-500 text-[9px] uppercase block">TRACK</span>
+                  <span className="font-bold text-zinc-300 truncate block">{track}</span>
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Skill Hex Mastery Matrix */}
-          <SkillHexGrid skills={userProfile.skills} />
+              {/* About & Summary Box (Frame 11) */}
+              <div className="bg-black/60 border border-zinc-800 p-3 space-y-1">
+                <span className="text-zinc-500 text-[9px] uppercase block">ABOUT & SUMMARY</span>
+                <p className="text-zinc-300 leading-relaxed text-xs">{bio || 'Club lead.'}</p>
+              </div>
+
+              {/* Core Skills Box (Frame 11) */}
+              <div className="bg-black/60 border border-zinc-800 p-3 space-y-2">
+                <span className="text-zinc-500 text-[9px] uppercase block">CORE SKILLS</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {skills.split(',').map((s, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 bg-zinc-900 border border-zinc-800 text-zinc-300 text-[10px]"
+                    >
+                      {s.trim()}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* PORTFOLIO & REPOSITORIES SECTION */}
-      <ProjectPortfolio
-        projects={userProfile.projects}
-        onAddProject={handleAddProject}
-      />
     </div>
   );
 };
+export default UserProfile;
