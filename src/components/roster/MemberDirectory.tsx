@@ -341,7 +341,13 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
       </div>
 
       {/* MEMBER DIRECTORY GRID (Frame 10) */}
-      {viewMode === 'grid' ? (
+      {filteredOperatives.length === 0 ? (
+        <div className="p-12 text-center border border-zinc-800 bg-[#0c0c14] space-y-3">
+          <Users size={32} className="mx-auto text-zinc-600" />
+          <h3 className="font-syne font-bold text-white text-base uppercase">NO MEMBERS FOUND</h3>
+          <p className="text-xs text-zinc-400 font-mono">No registered members match your current search or filter criteria.</p>
+        </div>
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredOperatives.map((member) => (
             <LeadershipCard

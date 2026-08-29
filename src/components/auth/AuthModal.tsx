@@ -237,9 +237,9 @@ export const AuthModal: React.FC = () => {
             )}
             <span>
               {mode === 'SIGN_IN'
-                ? 'OPERATIVE SIGN IN'
+                ? 'MEMBER SIGN IN'
                 : mode === 'SIGN_UP'
-                ? 'OPERATIVE REGISTRATION'
+                ? 'MEMBER REGISTRATION'
                 : mode === 'FORGOT_PASSWORD'
                 ? 'RESET PASSWORD'
                 : 'SET NEW PASSWORD'}

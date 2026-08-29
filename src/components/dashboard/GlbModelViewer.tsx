@@ -1,94 +1,158 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { MeshoptDecoder } from 'meshoptimizer';
 
 interface GlbModelViewerProps {
   modelUrl?: string;
   className?: string;
+  autoRotateSpeed?: number;
 }
 
 export const GlbModelViewer: React.FC<GlbModelViewerProps> = ({
-  modelUrl = '/assets/3d.glb',
+  modelUrl = '/assets/model.glb',
   className = '',
+  autoRotateSpeed = 0.008,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
 
-    const width = mount.clientWidth || 380;
-    const height = mount.clientHeight || 380;
+    setIsLoading(true);
+    setHasError(false);
 
+    // Three.js Scene Setup
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 4);
+    const width = mount.clientWidth || 400;
+    const height = mount.clientHeight || 400;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
+    camera.position.set(0, 0, 3.5);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance',
+    });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.35;
     mount.appendChild(renderer.domElement);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.enableZoom = false;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 2;
+    // Root Group for interactive rotation & gentle bobbing
+    const rootGroup = new THREE.Group();
+    rootGroup.position.set(0, 0, 0);
+    scene.add(rootGroup);
 
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
+    // Studio Lighting setup tailored for dark background
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.6);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 2.5);
-    dirLight1.position.set(5, 10, 7);
-    scene.add(dirLight1);
+    const mainKeyLight = new THREE.DirectionalLight(0xffffff, 3.8);
+    mainKeyLight.position.set(4, 6, 4);
+    scene.add(mainKeyLight);
 
-    const pointLight = new THREE.PointLight(0xc084fc, 3, 50);
-    pointLight.position.set(-5, -5, -5);
-    scene.add(pointLight);
+    const rimLight1 = new THREE.DirectionalLight(0xc084fc, 2.2); // Soft purple rim
+    rimLight1.position.set(-4, 2, -3);
+    scene.add(rimLight1);
 
-    let model: THREE.Object3D | null = null;
+    const rimLight2 = new THREE.PointLight(0x38bdf8, 2.5, 12); // Soft cyan bounce
+    rimLight2.position.set(0, -3, 2);
+    scene.add(rimLight2);
+
+    // Load Model with MeshoptDecoder
     const loader = new GLTFLoader();
+    loader.setMeshoptDecoder(MeshoptDecoder);
 
     loader.load(
       modelUrl,
       (gltf) => {
-        model = gltf.scene;
-        // Center model
+        const model = gltf.scene;
+
+        // Precise bounding box centering and scale normalization
         const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
         const maxDim = Math.max(size.x, size.y, size.z) || 1;
         const scale = 2.2 / maxDim;
+
+        model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
         model.scale.set(scale, scale, scale);
-        model.position.sub(center.multiplyScalar(scale));
-        scene.add(model);
+
+        // Enhance metallic PBR materials
+        model.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            if (mesh.material && (mesh.material as THREE.MeshStandardMaterial).isMeshStandardMaterial) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              mat.roughness = Math.min(mat.roughness, 0.3);
+              mat.metalness = Math.max(mat.metalness, 0.6);
+              mat.envMapIntensity = 1.3;
+            }
+          }
+        });
+
+        rootGroup.add(model);
+        setIsLoading(false);
       },
       undefined,
       (err) => {
-        console.warn('Failed to load GLB model, using fallback geometric mesh:', err);
-        // Fallback procedural torus knot
-        const geo = new THREE.TorusKnotGeometry(0.8, 0.25, 100, 16);
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0xc084fc,
-          metalness: 0.8,
-          roughness: 0.2,
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        scene.add(mesh);
+        console.error('Error loading 3D model:', err);
+        setHasError(true);
+        setIsLoading(false);
       }
     );
 
-    let animId: number;
-    const animate = () => {
-      animId = requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    };
-    animate();
+    // Smooth Mouse Drag & Parallax
+    let targetRotX = 0;
+    let targetRotY = 0;
+    let isDragging = false;
+    let prevMouseX = 0;
+    let prevMouseY = 0;
 
+    const handleMouseDown = (e: MouseEvent) => {
+      isDragging = true;
+      prevMouseX = e.clientX;
+      prevMouseY = e.clientY;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const deltaX = e.clientX - prevMouseX;
+        const deltaY = e.clientY - prevMouseY;
+        rootGroup.rotation.y += deltaX * 0.01;
+        rootGroup.rotation.x += deltaY * 0.01;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+      } else {
+        const rect = mount.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+        targetRotY = x * 0.5;
+        targetRotX = -y * 0.35;
+      }
+    };
+
+    const handleMouseUp = () => {
+      isDragging = false;
+    };
+
+    mount.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    // Resize Handler
     const handleResize = () => {
       if (!mount) return;
       const newWidth = mount.clientWidth;
@@ -100,17 +164,60 @@ export const GlbModelViewer: React.FC<GlbModelViewerProps> = ({
 
     window.addEventListener('resize', handleResize);
 
+    // Animation Loop
+    let animationFrameId: number;
+    const clock = new THREE.Clock();
+
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      const elapsed = clock.getElapsedTime();
+
+      if (!isDragging) {
+        rootGroup.rotation.y += autoRotateSpeed;
+        rootGroup.rotation.x += (targetRotX - rootGroup.rotation.x) * 0.04;
+        rootGroup.position.y = Math.sin(elapsed * 1.5) * 0.04;
+      }
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
     return () => {
+      cancelAnimationFrame(animationFrameId);
+      mount.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animId);
-      controls.dispose();
-      renderer.dispose();
-      if (mount && renderer.domElement) {
+      if (mount.contains(renderer.domElement)) {
         mount.removeChild(renderer.domElement);
       }
+      renderer.dispose();
     };
-  }, [modelUrl]);
+  }, [modelUrl, autoRotateSpeed]);
 
-  return <div ref={mountRef} className={`w-full h-full ${className}`} />;
+  return (
+    <div
+      className={`relative w-full aspect-square bg-[#0a0a10]/80 backdrop-blur-md border border-zinc-800 hover:border-zinc-700 transition-colors duration-300 overflow-hidden shadow-2xl flex items-center justify-center select-none group ${className}`}
+    >
+      {/* 3D WebGL Canvas */}
+      <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0a10]/70 backdrop-blur-sm z-20 font-mono text-xs">
+          <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {/* Error State */}
+      {hasError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0a10]/90 z-20 font-mono text-xs text-zinc-500 p-4 text-center">
+          <span>Failed to load 3D model</span>
+        </div>
+      )}
+    </div>
+  );
 };
+
 export default GlbModelViewer;

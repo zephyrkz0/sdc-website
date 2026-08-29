@@ -157,30 +157,9 @@
   background-size: 4px 4px;
 }
 
-/* Technical Manual Borders and Corner Crosshairs */
+/* Technical Manual Borders */
 .tech-corner-box {
   position: relative;
-}
-
-.tech-corner-box::before,
-.tech-corner-box::after {
-  content: '+';
-  position: absolute;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.4);
-  pointer-events: none;
-}
-
-.tech-corner-box::before {
-  top: -6px;
-  left: -5px;
-}
-
-.tech-corner-box::after {
-  bottom: -6px;
-  right: -5px;
 }
 
 /* Custom Scrollbar */

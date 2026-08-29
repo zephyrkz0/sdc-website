@@ -50,9 +50,6 @@ export const GlobalLoadingScreen: React.FC<GlobalLoadingScreenProps> = ({
 
           {/* Centered Brand & Progress Box */}
           <div className="flex flex-col items-center justify-center space-y-6 text-center relative">
-            {/* Subtle Purple Radial Aura */}
-            <div className="absolute w-96 h-96 bg-purple-900/20 rounded-full blur-3xl -z-10 pointer-events-none" />
-
             {/* Centered Rotating Star Icon Box */}
             <div className="w-16 h-16 bg-[#0c0c14] border border-zinc-700/80 flex items-center justify-center relative shadow-2xl">
               <motion.div
@@ -71,29 +68,29 @@ export const GlobalLoadingScreen: React.FC<GlobalLoadingScreenProps> = ({
                 SKILL DEVELOPMENT CLUB
               </h2>
               <p className="text-[10px] text-zinc-400 tracking-widest uppercase">
-                INITIALIZING ASSET ARCHIVE
+                INITIALIZING PLATFORM
               </p>
             </div>
 
             {/* Progress Bar */}
             <div className="w-full max-w-md space-y-2 pt-2">
-              <div className="w-full h-1 bg-zinc-900 overflow-hidden relative border border-zinc-800">
+              <div className="w-full h-1 bg-zinc-800 overflow-hidden relative">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-purple-500 via-pink-400 to-white"
+                  className="h-full bg-white"
                   style={{ width: `${progress}%` }}
                 />
               </div>
               <div className="flex items-center justify-between text-[10px] text-zinc-500">
-                <span>3D MESH GEOMETRY COMPILED</span>
+                <span>LOADING ASSETS</span>
                 <span className="text-zinc-300 font-bold">{progress}%</span>
               </div>
             </div>
           </div>
 
-          {/* Bottom Telemetry */}
+          {/* Bottom Info */}
           <div className="flex items-center justify-between text-[10px] text-zinc-600">
-            <span className="tracking-widest">|||||||||||||| SDC CUCEK • 2026</span>
-            <span>OPERATIVE PLATFORM // READY</span>
+            <span className="tracking-widest">SDC CUCEK • 2026</span>
+            <span>COMMUNITY PLATFORM</span>
           </div>
         </motion.div>
       )}

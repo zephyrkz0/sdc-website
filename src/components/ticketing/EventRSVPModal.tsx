@@ -29,8 +29,8 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
   );
   const [attendeeName, setAttendeeName] = useState(currentUser.fullName);
   const [attendeeCallsign, setAttendeeCallsign] = useState(currentUser.callsign);
-  const [attendeeEmail, setAttendeeEmail] = useState('operative@sdc.internal');
-  const [seatTier, setSeatTier] = useState<PhysicalTicketPass['seatTier']>('GENERAL_OPERATIVE');
+  const [attendeeEmail, setAttendeeEmail] = useState(currentUser.email || 'member@cucek.in');
+  const [seatTier, setSeatTier] = useState<PhysicalTicketPass['seatTier']>('MEMBER');
   const [track, setTrack] = useState<DomainTrack>(currentUser.track);
   const [generatedPass, setGeneratedPass] = useState<PhysicalTicketPass | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -53,12 +53,12 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
     const newPass: PhysicalTicketPass = {
       ticketId: ticketSerial,
       eventId: currentEvent?.id || 'evt-01',
-      eventTitle: currentEvent?.title || (targetEvent ? targetEvent.title : 'SDC_EVENT'),
+      eventTitle: currentEvent?.title || (targetEvent ? targetEvent.title : 'SDC Session'),
       eventDate: currentEvent?.date || (targetEvent ? targetEvent.date : '2026-09-18'),
       eventTime: 'time' in (currentEvent || {}) ? (currentEvent as any).time : '17:30 - 19:30',
-      eventLocation: currentEvent?.location || (targetEvent ? (targetEvent as any).location || (targetEvent as any).venue : 'Sector 01 Complex') || 'Sector 01 Complex',
-      attendeeName: attendeeName || currentUser.fullName || 'Operative',
-      attendeeCallsign: attendeeCallsign || currentUser.callsign || currentUser.username || 'operative',
+      eventLocation: currentEvent?.location || (targetEvent ? (targetEvent as any).location || (targetEvent as any).venue : 'CUCEK Computer Lab') || 'CUCEK Computer Lab',
+      attendeeName: attendeeName || currentUser.fullName || 'Member',
+      attendeeCallsign: attendeeCallsign || currentUser.callsign || currentUser.username || 'member',
       attendeeEmail,
       attendeeRole: currentUser.roleTitle || currentUser.role || 'Member',
       attendeeTrack: track,
@@ -66,7 +66,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
       qrPayload: JSON.stringify({
         tkt: ticketSerial,
         user: attendeeName || currentUser.fullName,
-        role: currentUser.roleTitle,
+        role: currentUser.roleTitle || currentUser.role,
         event: currentEvent?.title,
         sec: secCode,
       }),
@@ -130,13 +130,13 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-zinc-950 border border-zinc-700 shadow-2xl p-6 sm:p-8 z-10 my-8 tech-corner-box font-mono max-h-[90vh] overflow-y-auto"
+          className="relative w-full max-w-2xl bg-zinc-950 border border-zinc-700 shadow-2xl p-6 sm:p-8 z-10 my-8 font-mono max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-zinc-800 text-xs text-zinc-400">
             <div className="flex items-center gap-2">
               <Ticket size={16} className="text-purple-400" />
-              <span className="font-bold text-white">[EVENT_RSVP_&_PASS_MINTING]</span>
+              <span className="font-bold text-white uppercase tracking-wider">EVENT RSVP & PASS REGISTRATION</span>
             </div>
             <button
               onClick={() => {
@@ -154,7 +154,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
             <form onSubmit={handleGenerateTicket} className="mt-6 space-y-5 text-xs">
               {/* Event Selector */}
               <div>
-                <label className="block text-zinc-400 mb-1.5 font-bold">SELECT EVENT / GATHERING</label>
+                <label className="block text-zinc-400 mb-1.5 font-bold">SELECT EVENT / WORKSHOP</label>
                 <select
                   value={selectedEventId}
                   onChange={(e) => setSelectedEventId(e.target.value)}
@@ -170,13 +170,13 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
 
               {/* Seat Tier Selection */}
               <div>
-                <label className="block text-zinc-400 mb-1.5 font-bold">SELECT SEAT / ACCESS TIER</label>
+                <label className="block text-zinc-400 mb-1.5 font-bold">SELECT ACCESS PASS TYPE</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { id: 'GENERAL_OPERATIVE', label: 'MEMBER' },
-                    { id: 'HACKER_ACCESS', label: 'SPEAKER VIP' },
-                    { id: 'VIP_SPEAKER', label: 'SPEAKER' },
-                    { id: 'PRESS_EDITORIAL', label: 'PRESS / MEDIA' },
+                    { id: 'MEMBER', label: 'MEMBER' },
+                    { id: 'CORE_TEAM', label: 'CORE TEAM' },
+                    { id: 'SPEAKER', label: 'SPEAKER' },
+                    { id: 'ATTENDEE', label: 'ATTENDEE' },
                   ].map((tier) => (
                     <button
                       key={tier.id}
@@ -256,10 +256,10 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-gradient-to-r from-white via-zinc-200 to-white text-black font-bold uppercase tracking-wider hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] flex items-center gap-2"
+                  className="px-6 py-2.5 bg-white text-black font-bold uppercase tracking-wider hover:bg-zinc-200 transition-all flex items-center gap-2"
                 >
                   <Sparkles size={14} />
-                  <span>MINT HOLOGRAPHIC PASS</span>
+                  <span>GENERATE PASS</span>
                 </button>
               </div>
             </form>
@@ -268,7 +268,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
             <div className="mt-6 space-y-6">
               <div className="flex items-center justify-between text-emerald-400 font-bold text-xs pb-2 border-b border-zinc-800">
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 size={16} /> PASS ISSUED & VERIFIED ON CHAIN
+                  <CheckCircle2 size={16} /> PASS ISSUED & VERIFIED
                 </span>
                 <span className="text-zinc-400">ID: {generatedPass.ticketId}</span>
               </div>

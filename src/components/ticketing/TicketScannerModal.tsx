@@ -80,13 +80,13 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-xl bg-zinc-950 border border-zinc-700 shadow-2xl p-6 z-10 tech-corner-box font-mono"
+          className="relative w-full max-w-xl bg-zinc-950 border border-zinc-700 shadow-2xl p-6 z-10 font-mono"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-zinc-800 text-xs text-zinc-400">
             <div className="flex items-center gap-2">
               <QrCode size={16} className="text-purple-400" />
-              <span className="font-bold text-white">[TICKET_SCANNER_CHECKIN_SIMULATOR]</span>
+              <span className="font-bold text-white uppercase tracking-wider">EVENT TICKET SCANNER & CHECK-IN</span>
             </div>
             <button
               onClick={() => {

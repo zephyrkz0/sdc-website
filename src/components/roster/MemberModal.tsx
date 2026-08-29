@@ -92,12 +92,10 @@ export const MemberModal: React.FC<MemberModalProps> = ({ member, onClose }) => 
         }}
         className="sm:p-8 tech-corner-box modal-scroll-box"
       >
-        {/* Top Bar with Status and Close */}
+        {/* Top Bar with Title and Close */}
         <div className="flex items-center justify-between pb-3 border-b border-zinc-800 text-[10px] text-zinc-400">
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${styles.statusDotClass}`} />
-            <span className="font-bold text-white tracking-widest">@{handle}</span>
-            <span className="text-zinc-500">• Verified Profile</span>
+            <span className="font-bold text-white uppercase tracking-wider">MEMBER PROFILE</span>
           </div>
 
           <button
@@ -139,8 +137,6 @@ export const MemberModal: React.FC<MemberModalProps> = ({ member, onClose }) => 
                 @{handle}
               </span>
               <div className="flex items-center gap-1.5">
-                {tier === 'SUPER_ADMIN' && <Crown size={13} className="text-amber-400" />}
-                {tier === 'ADMIN' && <Shield size={13} className="text-amber-400" />}
                 <span className={styles.badgeClass}>
                   {styles.label}
                 </span>
@@ -156,10 +152,6 @@ export const MemberModal: React.FC<MemberModalProps> = ({ member, onClose }) => 
               {name}
             </h2>
 
-            <div className={`inline-block px-2.5 py-0.5 text-xs font-mono uppercase tracking-wide ${styles.roleTagClass}`}>
-              {member.role}
-            </div>
-
             <div className="flex flex-wrap items-center gap-4 text-[10px] font-mono text-zinc-400 pt-1">
               {member.branch && (
                 <span className="flex items-center gap-1">
@@ -167,7 +159,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({ member, onClose }) => 
                 </span>
               )}
               <span className="flex items-center gap-1">
-                Status: <span className="text-emerald-400 font-bold">{member.status || 'Active'}</span>
+                Status: <span className="text-zinc-300 font-bold">{member.status || 'Active'}</span>
               </span>
             </div>
           </div>
