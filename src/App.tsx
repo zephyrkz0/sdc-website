@@ -161,7 +161,10 @@ const AppContent: React.FC = () => {
     return memberList;
   }, [members, allUsers]);
 
+  const hasEvents = events.length > 0 || sessions.length > 0;
+
   const handleOpenRSVP = (target?: ClubEvent | ScheduleSession) => {
+    if (!hasEvents && !target) return;
     setSelectedEventForRSVP(target || events[0] || sessions[0]);
     setRsvpModalOpen(true);
   };
@@ -204,6 +207,16 @@ const AppContent: React.FC = () => {
     setSessions((prev) => [newSession, ...prev]);
   };
 
+  const handleDeleteSession = async (sessionId: string) => {
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    await eventService.deleteEvent(sessionId);
+  };
+
+  const handleDeleteTicket = async (ticketId: string, eventId?: string) => {
+    setTickets((prev) => prev.filter((t) => t.ticketId !== ticketId));
+    await ticketService.deleteTicket(ticketId, eventId);
+  };
+
   return (
     <div className="min-h-screen bg-[#08080a] text-zinc-100 relative selection:bg-white selection:text-black overflow-x-clip">
       {/* React Bits WebGL Aurora Background — Sole Background */}
@@ -225,6 +238,7 @@ const AppContent: React.FC = () => {
         setActiveTab={setActiveTab}
         onOpenScanner={isAdmin ? handleOpenScanner : undefined}
         onOpenRSVP={() => handleOpenRSVP()}
+        hasEvents={hasEvents}
       />
 
       {/* Main Content Pages */}
@@ -252,6 +266,7 @@ const AppContent: React.FC = () => {
               sessions={sessions}
               onRSVP={handleOpenRSVP}
               onAddSession={handleAddSession}
+              onDeleteSession={handleDeleteSession}
             />
           )}
 
@@ -269,6 +284,8 @@ const AppContent: React.FC = () => {
               events={events}
               onOpenRSVP={handleOpenRSVP}
               onOpenScanner={handleOpenScanner}
+              hasEvents={hasEvents}
+              onDeleteTicket={handleDeleteTicket}
             />
           )}
         </main>
@@ -281,6 +298,7 @@ const AppContent: React.FC = () => {
         targetEvent={selectedEventForRSVP}
         eventsList={events}
         currentUser={currentUser || CURRENT_USER_PROFILE}
+        isAdmin={isAdmin}
         onSaveTicket={handleSaveTicket}
       />
 

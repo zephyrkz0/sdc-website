@@ -13,6 +13,7 @@ interface EventRSVPModalProps {
   targetEvent?: ClubEvent | ScheduleSession | null;
   eventsList: ClubEvent[];
   currentUser: ClubMember;
+  isAdmin?: boolean;
   onSaveTicket: (pass: PhysicalTicketPass) => void;
 }
 
@@ -22,6 +23,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
   targetEvent,
   eventsList,
   currentUser,
+  isAdmin = false,
   onSaveTicket,
 }) => {
   const [selectedEventId, setSelectedEventId] = useState<string>(
@@ -37,10 +39,25 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
 
   if (!isOpen) return null;
 
+  const hasNoEvents = eventsList.length === 0 && !targetEvent;
+
   const currentEvent =
     eventsList.find((e) => e.id === selectedEventId) ||
     (targetEvent && 'venueCoords' in targetEvent ? targetEvent : null) ||
     eventsList[0];
+
+  // Seat tier options filtered by role — non-admins only see MEMBER & ATTENDEE
+  const seatTierOptions = isAdmin
+    ? [
+        { id: 'MEMBER', label: 'MEMBER' },
+        { id: 'CORE_TEAM', label: 'CORE TEAM' },
+        { id: 'SPEAKER', label: 'SPEAKER' },
+        { id: 'ATTENDEE', label: 'ATTENDEE' },
+      ]
+    : [
+        { id: 'MEMBER', label: 'MEMBER' },
+        { id: 'ATTENDEE', label: 'ATTENDEE' },
+      ];
 
   const handleGenerateTicket = (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,7 +166,28 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
             </button>
           </div>
 
-          {!generatedPass ? (
+          {hasNoEvents ? (
+            /* NO EVENTS EMPTY STATE */
+            <div className="mt-6 py-12 text-center space-y-4">
+              <div className="w-14 h-14 mx-auto bg-zinc-900 border border-zinc-700 flex items-center justify-center text-zinc-500">
+                <Calendar size={24} />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-syne font-black text-lg text-white uppercase">
+                  NO UPCOMING EVENTS
+                </h4>
+                <p className="text-xs text-zinc-400 max-w-sm mx-auto leading-relaxed">
+                  There are currently no events or sessions available to RSVP for. Check back when new events are announced.
+                </p>
+              </div>
+              <button
+                onClick={() => { playCyberClick(); onClose(); }}
+                className="px-5 py-2.5 border border-zinc-700 text-zinc-300 hover:text-white hover:border-white text-xs font-bold uppercase tracking-wider transition-all"
+              >
+                CLOSE
+              </button>
+            </div>
+          ) : !generatedPass ? (
             /* RSVP REGISTRATION FORM */
             <form onSubmit={handleGenerateTicket} className="mt-6 space-y-5 text-xs">
               {/* Event Selector */}
@@ -172,12 +210,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
               <div>
                 <label className="block text-zinc-400 mb-1.5 font-bold">SELECT ACCESS PASS TYPE</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {[
-                    { id: 'MEMBER', label: 'MEMBER' },
-                    { id: 'CORE_TEAM', label: 'CORE TEAM' },
-                    { id: 'SPEAKER', label: 'SPEAKER' },
-                    { id: 'ATTENDEE', label: 'ATTENDEE' },
-                  ].map((tier) => (
+                  {seatTierOptions.map((tier) => (
                     <button
                       key={tier.id}
                       type="button"

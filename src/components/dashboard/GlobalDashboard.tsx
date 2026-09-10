@@ -68,7 +68,7 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
             style={{ opacity: titleOpacity, y: titleY, scale: titleScale }}
             className="absolute z-20 text-center select-none px-4 pointer-events-none"
           >
-            <h1 className="font-openboek text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-wider text-white drop-shadow-[0_0_35px_rgba(255,255,255,0.4)]">
+            <h1 className="font-syne text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-wider text-white drop-shadow-[0_0_35px_rgba(255,255,255,0.4)]">
               SKILL DEVELOPMENT CLUB
             </h1>
           </motion.div>

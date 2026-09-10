@@ -9,12 +9,14 @@ interface ScheduleTimetableProps {
   sessions?: ScheduleSession[];
   onRSVP?: (session: ScheduleSession) => void;
   onAddSession?: (session: ScheduleSession) => void;
+  onDeleteSession?: (sessionId: string) => void;
 }
 
 export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
   sessions = [],
   onRSVP,
   onAddSession,
+  onDeleteSession,
 }) => {
   const { isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'UPCOMING' | 'ARCHIVE'>('UPCOMING');
@@ -233,7 +235,7 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSessions.map((session) => (
-            <SessionCard key={session.id} session={session} onRSVP={onRSVP} />
+            <SessionCard key={session.id} session={session} onRSVP={onRSVP} onDelete={onDeleteSession} isAdmin={isAdmin} />
           ))}
         </div>
       )}

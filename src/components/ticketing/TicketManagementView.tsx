@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { PhysicalTicketPass, ClubEvent } from '../../types';
 import { PhysicalPass } from './PhysicalPass';
 import { exportPassToPDF, exportPassToPNG } from './PassExporter';
-import { QrCode, Download, Ticket, Sparkles, Clock } from 'lucide-react';
+import { QrCode, Download, Ticket, Sparkles, Clock, Trash2 } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { useAuth } from '../../context/AuthContext';
 
@@ -11,6 +11,8 @@ interface TicketManagementViewProps {
   events?: ClubEvent[];
   onOpenRSVP: (event?: ClubEvent) => void;
   onOpenScanner?: () => void;
+  hasEvents?: boolean;
+  onDeleteTicket?: (ticketId: string, eventId?: string) => void;
 }
 
 export const TicketManagementView: React.FC<TicketManagementViewProps> = ({
@@ -18,6 +20,8 @@ export const TicketManagementView: React.FC<TicketManagementViewProps> = ({
   events = [],
   onOpenRSVP,
   onOpenScanner,
+  hasEvents = false,
+  onDeleteTicket,
 }) => {
   const { isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PAST'>('ACTIVE');
@@ -128,19 +132,23 @@ export const TicketManagementView: React.FC<TicketManagementViewProps> = ({
               YOU HAVEN'T REGISTERED FOR ANY EVENTS YET
             </h4>
             <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
-              Once you RSVP for an upcoming workshop, summit, or hackathon session, your official digital pass with a verified check-in QR code will appear here.
+              {hasEvents
+                ? 'Once you RSVP for an upcoming workshop, summit, or hackathon session, your official digital pass with a verified check-in QR code will appear here.'
+                : 'There are currently no upcoming events available. Your passes will appear here once events are announced and you RSVP.'}
             </p>
           </div>
-          <button
-            onClick={() => {
-              playCyberClick();
-              onOpenRSVP();
-            }}
-            className="px-5 py-2.5 bg-white text-black font-bold uppercase text-xs hover:bg-zinc-200 inline-flex items-center gap-1.5"
-          >
-            <Sparkles size={14} />
-            <span>EXPLORE EVENTS & RSVP</span>
-          </button>
+          {hasEvents && (
+            <button
+              onClick={() => {
+                playCyberClick();
+                onOpenRSVP();
+              }}
+              className="px-5 py-2.5 bg-white text-black font-bold uppercase text-xs hover:bg-zinc-200 inline-flex items-center gap-1.5"
+            >
+              <Sparkles size={14} />
+              <span>EXPLORE EVENTS & RSVP</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -163,6 +171,21 @@ export const TicketManagementView: React.FC<TicketManagementViewProps> = ({
                   <Download size={13} />
                   <span>SAVE PNG</span>
                 </button>
+                {onDeleteTicket && (
+                  <button
+                    onClick={() => {
+                      playCyberClick();
+                      if (confirm('Cancel this pass? This will free up the event seat.')) {
+                        onDeleteTicket(ticket.ticketId, ticket.eventId);
+                      }
+                    }}
+                    className="py-2 px-3 bg-zinc-900 border border-zinc-800 hover:border-red-500 hover:bg-red-950/30 text-zinc-500 hover:text-red-400 text-xs uppercase font-bold flex items-center justify-center gap-1.5 transition-colors"
+                    title="Cancel Pass"
+                  >
+                    <Trash2 size={13} />
+                    <span>CANCEL</span>
+                  </button>
+                )}
               </div>
             </div>
           ))}

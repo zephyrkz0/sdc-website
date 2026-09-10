@@ -175,5 +175,36 @@ export const ticketService = {
       return false;
     }
   },
+
+  // Delete a single ticket and decrement event capacity
+  async deleteTicket(ticketId: string, eventId?: string): Promise<boolean> {
+    if (!isSupabaseConfigured()) return true;
+
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .delete()
+        .eq('ticket_id', ticketId);
+
+      if (error) {
+        console.error('Error deleting ticket:', error);
+        return false;
+      }
+
+      // Decrement RSVP count for the event to free up capacity
+      if (eventId && !eventId.includes('local') && eventId !== 'evt-custom') {
+        try {
+          await supabase.rpc('decrement_rsvp', { event_id: eventId });
+        } catch (rpcErr) {
+          console.warn('decrement_rsvp RPC notice:', rpcErr);
+        }
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Failed to delete ticket:', err);
+      return false;
+    }
+  },
 };
 export default ticketService;

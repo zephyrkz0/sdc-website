@@ -1,15 +1,17 @@
 import React from 'react';
 import { ScheduleSession } from '../../types';
 import { ChromeBadge } from '../common/ChromeBadge';
-import { Calendar, Clock, MapPin, Video, User, CheckCircle2, Laptop, ArrowRight, Sparkles, Download } from 'lucide-react';
+import { Calendar, Clock, MapPin, Video, User, CheckCircle2, Laptop, ArrowRight, Sparkles, Download, Trash2 } from 'lucide-react';
 import { playCyberClick, playHoverBeep } from '../common/AudioEffects';
 
 interface SessionCardProps {
   session: ScheduleSession;
   onRSVP?: (session: ScheduleSession) => void;
+  onDelete?: (sessionId: string) => void;
+  isAdmin?: boolean;
 }
 
-export const SessionCard: React.FC<SessionCardProps> = ({ session, onRSVP }) => {
+export const SessionCard: React.FC<SessionCardProps> = ({ session, onRSVP, onDelete, isAdmin }) => {
   const getSessionTypeBadge = (type: string) => {
     switch (type) {
       case 'CODE':
@@ -85,6 +87,21 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, onRSVP }) => 
 
         <div className="flex items-center gap-2">
           {getSessionTypeBadge(session.sessionType || 'CODE')}
+          {isAdmin && onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                playCyberClick();
+                if (confirm(`Delete session "${session.title}"?`)) {
+                  onDelete(session.id);
+                }
+              }}
+              className="p-1.5 border border-zinc-800 bg-zinc-900 hover:border-red-500 hover:bg-red-950/30 text-zinc-500 hover:text-red-400 transition-colors"
+              title="Delete Session"
+            >
+              <Trash2 size={12} />
+            </button>
+          )}
         </div>
       </div>
 

@@ -162,3 +162,27 @@ CREATE POLICY "Allow Event Writes" ON public.events FOR ALL USING (true) WITH CH
 CREATE POLICY "Allow Past Event Writes" ON public.past_events FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow Ticket Writes" ON public.tickets FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow Gallery Writes" ON public.gallery_items FOR ALL USING (true) WITH CHECK (true);
+
+-- ==========================================================
+-- 9. RPC FUNCTIONS (RSVP Counter Management)
+-- ==========================================================
+
+-- Increment RSVP count when a new pass is generated
+CREATE OR REPLACE FUNCTION public.increment_rsvp(event_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.events
+  SET rsvp_count = rsvp_count + 1
+  WHERE id = event_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Decrement RSVP count when a pass is cancelled (floor at 0)
+CREATE OR REPLACE FUNCTION public.decrement_rsvp(event_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.events
+  SET rsvp_count = GREATEST(rsvp_count - 1, 0)
+  WHERE id = event_id;
+END;
+$$ LANGUAGE plpgsql;

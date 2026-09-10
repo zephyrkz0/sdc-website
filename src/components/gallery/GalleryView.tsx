@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GalleryItem } from '../../types';
 import { Image as ImageIcon, Plus, X, Upload } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { useAuth } from '../../context/AuthContext';
+import { galleryService } from '../../services/galleryService';
 
 export const GalleryView: React.FC = () => {
   const { isAdmin } = useAuth();
@@ -11,8 +12,23 @@ export const GalleryView: React.FC = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('DAILY_LAB_SESSIONS');
-  const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load gallery items from Supabase on mount
+  useEffect(() => {
+    const loadGallery = async () => {
+      const liveItems = await galleryService.fetchGalleryItems();
+      if (liveItems && liveItems.length > 0) {
+        setItems(liveItems);
+      }
+    };
+    loadGallery();
+  }, []);
 
   const categories = [
     { id: 'ALL', label: 'All Photos' },
@@ -27,30 +43,72 @@ export const GalleryView: React.FC = () => {
     (item) => activeCategory === 'ALL' || item.category === activeCategory
   );
 
-  const handleUploadSubmit = (e: React.FormEvent) => {
+  const handleFileSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    setImageFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    if (!title || !imageUrl) return;
+    setIsDragging(true);
+  };
 
-    const newItem: GalleryItem = {
-      id: `gal-${Date.now()}`,
-      title,
-      category,
-      imageUrl,
-      description,
-      date: new Date().toISOString().split('T')[0],
-    };
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
 
-    setItems((prev) => [newItem, ...prev]);
-    playSuccessChime();
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file);
+  };
+
+  const handleUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title || !imageFile) return;
+
+    setIsUploading(true);
+    playCyberClick();
+
+    try {
+      const result = await galleryService.uploadPhoto(imageFile, {
+        title,
+        category,
+        description,
+      });
+
+      if (result) {
+        setItems((prev) => [result, ...prev]);
+        playSuccessChime();
+      }
+    } catch (err) {
+      console.error('Upload failed:', err);
+    } finally {
+      setIsUploading(false);
+      setUploadModalOpen(false);
+      setTitle('');
+      setDescription('');
+      setImageFile(null);
+      setImagePreview('');
+    }
+  };
+
+  const resetUploadForm = () => {
     setUploadModalOpen(false);
     setTitle('');
-    setImageUrl('');
     setDescription('');
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview('');
   };
 
   return (
     <div className="space-y-8 animate-fade-in font-mono">
-      {/* Header (Frame 13) */}
+      {/* Header */}
       <div className="space-y-2 border-b border-zinc-800 pb-4">
         <h2 className="text-3xl sm:text-4xl font-syne font-black tracking-tight text-white uppercase">
           EVENT & CAMPUS GALLERY
@@ -60,7 +118,7 @@ export const GalleryView: React.FC = () => {
         </p>
       </div>
 
-      {/* Categories Bar & Upload Button (Frame 13) */}
+      {/* Categories Bar & Upload Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
           {categories.map((c) => (
@@ -97,7 +155,7 @@ export const GalleryView: React.FC = () => {
         </div>
       </div>
 
-      {/* Gallery Grid or Empty State (Frame 13) */}
+      {/* Gallery Grid or Empty State */}
       {filteredItems.length === 0 ? (
         <div className="p-16 bg-[#0a0a0f] border border-zinc-800 text-center space-y-4 shadow-xl">
           <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-700 flex items-center justify-center text-zinc-400">
@@ -161,7 +219,7 @@ export const GalleryView: React.FC = () => {
           <div className="max-w-md w-full bg-[#0d0d14] border border-zinc-700 p-6 space-y-4 shadow-2xl font-mono text-xs">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <span className="font-bold text-white uppercase">UPLOAD PHOTO TO GALLERY</span>
-              <button onClick={() => setUploadModalOpen(false)} className="text-zinc-500 hover:text-white">
+              <button onClick={resetUploadForm} className="text-zinc-500 hover:text-white">
                 <X size={16} />
               </button>
             </div>
@@ -193,14 +251,66 @@ export const GalleryView: React.FC = () => {
                 </select>
               </div>
 
+              {/* File Upload Zone */}
               <div>
-                <label className="block text-zinc-400 mb-1 text-[10px]">IMAGE URL</label>
+                <label className="block text-zinc-400 mb-1 text-[10px]">UPLOAD IMAGE</label>
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`w-full border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center gap-2 p-4 ${
+                    isDragging
+                      ? 'border-purple-400 bg-purple-950/20'
+                      : imagePreview
+                      ? 'border-zinc-600 bg-black'
+                      : 'border-zinc-700 bg-black hover:border-zinc-500'
+                  }`}
+                >
+                  {imagePreview ? (
+                    <div className="relative w-full">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full max-h-40 object-contain rounded-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setImageFile(null);
+                          URL.revokeObjectURL(imagePreview);
+                          setImagePreview('');
+                        }}
+                        className="absolute top-1 right-1 p-0.5 bg-black/80 border border-zinc-700 text-zinc-400 hover:text-white"
+                      >
+                        <X size={12} />
+                      </button>
+                      <div className="text-[9px] text-zinc-500 mt-1 text-center truncate">
+                        {imageFile?.name}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload size={20} className="text-zinc-500" />
+                      <span className="text-zinc-400 text-[10px]">
+                        CLICK TO SELECT OR DRAG & DROP AN IMAGE
+                      </span>
+                      <span className="text-zinc-600 text-[9px]">
+                        JPG, PNG, WEBP up to 10MB
+                      </span>
+                    </>
+                  )}
+                </div>
                 <input
-                  type="url"
-                  required
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileSelect(file);
+                  }}
                 />
               </div>
 
@@ -217,16 +327,24 @@ export const GalleryView: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setUploadModalOpen(false)}
+                  onClick={resetUploadForm}
                   className="px-4 py-2 bg-zinc-900 text-zinc-300 border border-zinc-800"
                 >
                   CANCEL
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-white text-black font-bold uppercase hover:bg-zinc-200"
+                  disabled={!imageFile || isUploading}
+                  className="px-5 py-2 bg-white text-black font-bold uppercase hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
-                  SAVE & PUBLISH
+                  {isUploading ? (
+                    <span>UPLOADING...</span>
+                  ) : (
+                    <>
+                      <Upload size={13} />
+                      <span>UPLOAD & PUBLISH</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
