@@ -71,9 +71,6 @@ export const DomainRadar: React.FC<DomainRadarProps> = ({ sessions = [] }) => {
                   <div className="w-10 h-10 bg-zinc-900 border border-zinc-700 flex items-center justify-center text-white group-hover:border-zinc-400 transition-colors">
                     <Icon size={18} />
                   </div>
-                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest px-2 py-0.5 border border-zinc-800 bg-zinc-900/60">
-                    TRACK FOCUS
-                  </span>
                 </div>
 
                 <h3 className="font-syne font-bold text-xl text-white tracking-tight">
@@ -87,8 +84,7 @@ export const DomainRadar: React.FC<DomainRadarProps> = ({ sessions = [] }) => {
 
               {/* Progress Bar & Logged Time */}
               <div className="space-y-2 font-mono text-[10px] pt-4 border-t border-zinc-900">
-                <div className="flex justify-between text-zinc-400">
-                  <span>Logged Workshop Time</span>
+                <div className="flex justify-end text-zinc-400">
                   <span className="text-white font-bold">{track.displayHours}</span>
                 </div>
                 <div className="w-full h-1 bg-zinc-800 overflow-hidden">

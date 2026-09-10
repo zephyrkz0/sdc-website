@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { ClubMember } from '../../types';
-import { OperativeIdCard } from './OperativeIdCard';
+import { MemberIdCard } from './OperativeIdCard';
 import {
   Edit3,
   Check,
@@ -33,10 +33,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [branch, setBranch] = useState('Computer');
-  const [semester, setSemester] = useState('S1');
+  const [branch, setBranch] = useState('');
+  const [semester, setSemester] = useState('');
   const [bio, setBio] = useState('');
-  const [track, setTrack] = useState('AI & Machine Learning');
+  const [track, setTrack] = useState('');
   const [skills, setSkills] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
@@ -54,11 +54,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     if (profile) {
       setFirstName(profile.firstName || profile.fullName?.split(' ')[0] || '');
       setLastName(profile.lastName || profile.fullName?.split(' ').slice(1).join(' ') || '');
-      setBranch(profile.branch || 'Computer');
-      setSemester(profile.semester || 'S1');
-      setBio(profile.bio || 'Club lead.');
-      setTrack(profile.track || 'AI & Machine Learning');
-      setSkills((profile.skills && profile.skills.length > 0 ? profile.skills : ['ollama', 'agentic ai', 'full stack', 'python', 'competitive prog']).join(', '));
+      setBranch(profile.branch || '');
+      setSemester(profile.semester || '');
+      setBio(profile.bio || '');
+      setTrack(profile.track || '');
+      setSkills((profile.skills || []).join(', '));
       setAvatarUrl(profile.avatarUrl || '');
       setGithubUrl(profile.githubUrl || profile.github || '');
       setLinkedinUrl(profile.linkedinUrl || profile.linkedin || '');
@@ -73,14 +73,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             MEMBER PROFILE
           </h2>
           <p className="text-xs text-zinc-400">
-            Manage your personal profile, credentials, project showcase, and member pass.
+            Manage your personal profile, credentials, and project showcase.
           </p>
         </div>
 
         <div className="max-w-md mx-auto p-8 bg-zinc-950 border border-zinc-800 text-center space-y-4">
           <Lock size={28} className="mx-auto text-zinc-400" />
           <h3 className="font-syne font-bold text-lg text-white">SIGN IN REQUIRED</h3>
-          <p className="text-xs text-zinc-400">Please sign in to view and manage your profile pass.</p>
+          <p className="text-xs text-zinc-400">Please sign in to view and manage your profile.</p>
           <button
             onClick={() => {
               playCyberClick();
@@ -101,7 +101,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
   const handleDownloadIdPass = async () => {
     playCyberClick();
-    const node = document.getElementById('operative-id-card-node');
+    const node = document.getElementById('member-id-card-node');
     if (!node) return;
 
     try {
@@ -112,7 +112,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       });
       const link = document.createElement('a');
       link.href = canvas.toDataURL('image/png');
-      link.download = `SDC_PASS_${activeUser.username || 'PASS'}.png`;
+      link.download = `SDC_ID_${activeUser.username || 'CARD'}.png`;
       link.click();
     } catch (err) {
       console.error(err);
@@ -168,26 +168,26 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           MEMBER PROFILE
         </h2>
         <p className="text-xs text-zinc-400">
-          Manage your personal profile, credentials, project showcase, and member pass.
+          Manage your personal profile, credentials, and project showcase.
         </p>
       </div>
 
-      {/* Main Grid: Left Vertical Pass & Right Profile Info Box (Frame 11) */}
+      {/* Main Grid: Left Vertical ID Card & Right Profile Info Box */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: ID Pass */}
+        {/* Left Column: ID Card */}
         <div className="lg:col-span-5 space-y-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-400 font-bold">Member Pass</span>
+            <span className="text-zinc-400 font-bold">Member ID</span>
             <button
               onClick={handleDownloadIdPass}
               className="text-purple-400 hover:text-purple-300 transition-colors"
             >
-              [Export PNG Pass]
+              [Export ID Card]
             </button>
           </div>
 
-          <div id="operative-id-card-node" className="flex justify-center">
-            <OperativeIdCard
+          <div id="member-id-card-node" className="flex justify-center">
+            <MemberIdCard
               member={{
                 ...activeUser,
                 firstName,
@@ -207,14 +207,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         <div
           className={`lg:col-span-7 p-6 space-y-6 select-none ${roleStyles.cardBgClass} ${roleStyles.cardBorderClass} ${roleStyles.cardGlowClass}`}
         >
-          {/* Top Bar with Profile Information & Role Badge */}
+          {/* Top Bar with Profile Information */}
           <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
             <div className="flex items-center gap-2">
               <User size={16} className={roleStyles.textColor} />
               <span className="font-bold text-white text-xs uppercase tracking-wider">
                 PROFILE INFORMATION
               </span>
-              <span className={roleStyles.badgeClass}>{roleStyles.label}</span>
             </div>
 
             <button
@@ -281,6 +280,15 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
                   />
                 </div>
+                <div>
+                  <label className="block text-zinc-400 text-[10px] mb-1">TRACK FOCUS</label>
+                  <input
+                    type="text"
+                    value={track}
+                    onChange={(e) => setTrack(e.target.value)}
+                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div>
@@ -307,34 +315,34 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 <div className="bg-black/60 border border-zinc-800 p-3 space-y-1">
                   <span className="text-zinc-500 text-[9px] uppercase block">NAME</span>
                   <span className="font-bold text-white truncate block">
-                    {activeUser.fullName || `${firstName} ${lastName}`.trim() || 'Kasinath R'}
+                    {activeUser.fullName || `${firstName} ${lastName}`.trim() || 'Member'}
                   </span>
                 </div>
 
                 <div className="bg-black/60 border border-zinc-800 p-3 space-y-1">
                   <span className="text-zinc-500 text-[9px] uppercase block">HANDLE</span>
                   <span className="font-bold text-purple-300 truncate block">
-                    @{activeUser.username || 'zephyrkz0'}
+                    @{activeUser.username || activeUser.callsign || 'member'}
                   </span>
                 </div>
 
                 <div className="bg-black/60 border border-zinc-800 p-3 space-y-1">
                   <span className="text-zinc-500 text-[9px] uppercase block">BRANCH • SEM</span>
                   <span className="font-bold text-zinc-300 truncate block">
-                    {branch} {semester}
+                    {branch || '—'} {semester ? `• ${semester}` : ''}
                   </span>
                 </div>
 
                 <div className="bg-black/60 border border-zinc-800 p-3 space-y-1">
                   <span className="text-zinc-500 text-[9px] uppercase block">TRACK</span>
-                  <span className="font-bold text-zinc-300 truncate block">{track}</span>
+                  <span className="font-bold text-zinc-300 truncate block">{track || '—'}</span>
                 </div>
               </div>
 
               {/* About & Summary Box (Frame 11) */}
               <div className="bg-black/60 border border-zinc-800 p-3 space-y-1">
                 <span className="text-zinc-500 text-[9px] uppercase block">ABOUT & SUMMARY</span>
-                <p className="text-zinc-300 leading-relaxed text-xs">{bio || 'Club lead.'}</p>
+                <p className="text-zinc-300 leading-relaxed text-xs">{bio || 'No bio added yet.'}</p>
               </div>
 
               {/* Core Skills Box (Frame 11) */}

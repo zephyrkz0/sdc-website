@@ -15,7 +15,6 @@ export const LeadershipCard: React.FC<LeadershipCardProps> = ({ member, onSelect
   const styles = getRoleStyles(roleTier);
 
   const displayName = member.fullName || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Club Member';
-  const roleTitle = member.role || member.roleTitle || (roleTier === 'SUPER_ADMIN' ? 'Super Admin' : roleTier === 'ADMIN' ? 'Admin' : 'Core Member');
 
   return (
     <div
@@ -71,11 +70,6 @@ export const LeadershipCard: React.FC<LeadershipCardProps> = ({ member, onSelect
             <h3 className="font-syne font-bold text-lg text-white group-hover:text-zinc-200 transition-colors truncate">
               {displayName}
             </h3>
-
-            {/* Clean Single Role Title Display */}
-            <div className={`text-xs font-mono font-bold tracking-wide truncate ${styles.textColor}`}>
-              {roleTitle}
-            </div>
 
             {member.branch && (
               <div className="text-[10px] font-mono text-zinc-500 truncate">

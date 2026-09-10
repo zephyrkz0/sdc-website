@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ClubMember, UserRole } from '../../types';
 import { LeadershipCard } from './LeadershipCard';
-import { OperativeRow } from './OperativeRow';
+import { MemberRow } from './OperativeRow';
 import { MemberModal } from './MemberModal';
 import { AddMemberModal } from './AddMemberModal';
 import { useAuth } from '../../context/AuthContext';
@@ -42,7 +42,7 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
     { id: 'AI', label: 'AI & ML' },
   ];
 
-  const filteredOperatives = useMemo(() => {
+  const filteredMembers = useMemo(() => {
     return members
       .filter((member) => {
         const name = member.fullName || `${member.firstName || ''} ${member.lastName || ''}`;
@@ -96,7 +96,7 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
       draftPositions[userId] !== undefined
         ? draftPositions[userId].trim()
         : existingMember?.role ||
-          (targetRole === 'MASTER_ADMIN' ? 'Super Admin' : targetRole === 'ADMIN' ? 'Admin' : 'Core Member');
+          (targetRole === 'SUPER_ADMIN' ? 'Super Admin' : targetRole === 'ADMIN' ? 'Admin' : 'Core Member');
 
     const result = updateUserRoleAndPosition(userId, targetRole, targetPosition);
     setRoleStatusMsg(result.message);
@@ -146,14 +146,11 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
             <div className="flex items-center gap-2">
               <Shield size={16} className="text-purple-400" />
               <span className="font-bold text-white text-xs uppercase tracking-wider">
-                SUPER ADMIN
-              </span>
-              <span className="px-1.5 py-0.5 bg-purple-600 text-white text-[9px] font-bold uppercase tracking-wider">
-                SUPER ADMIN
+                {isMasterAdmin ? 'SUPER ADMIN' : 'ADMINISTRATOR'}
               </span>
             </div>
             <p className="text-xs text-zinc-300">
-              Super Admin: Manage member roles, assign custom titles, and add club members.
+              Manage member roles, assign custom titles, and add club members.
             </p>
           </div>
 
@@ -212,7 +209,7 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
               const currentPosition =
                 draftPositions[u.id] !== undefined
                   ? draftPositions[u.id]
-                  : memberCard?.role || (u.role === 'MASTER_ADMIN' ? 'Super Admin' : u.role === 'ADMIN' ? 'Admin' : 'Core Member');
+                  : memberCard?.role || (u.role === 'SUPER_ADMIN' ? 'Super Admin' : u.role === 'ADMIN' ? 'Admin' : 'Core Member');
               const currentRole: UserRole = draftRoles[u.id] || u.role || 'MEMBER';
               const rowTier = getRoleTier(u);
               const rowStyles = getRoleStyles(rowTier);
@@ -246,7 +243,7 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
                     >
                       <option value="MEMBER">MEMBER</option>
                       <option value="ADMIN">ADMIN</option>
-                      <option value="MASTER_ADMIN">SUPER ADMIN</option>
+                      <option value="SUPER_ADMIN">SUPER ADMIN</option>
                     </select>
                     <button
                       onClick={() => handleSaveUserAssignment(u.id, u.email, u.username)}
@@ -341,7 +338,7 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
       </div>
 
       {/* MEMBER DIRECTORY GRID (Frame 10) */}
-      {filteredOperatives.length === 0 ? (
+      {filteredMembers.length === 0 ? (
         <div className="p-12 text-center border border-zinc-800 bg-[#0c0c14] space-y-3">
           <Users size={32} className="mx-auto text-zinc-600" />
           <h3 className="font-syne font-bold text-white text-base uppercase">NO MEMBERS FOUND</h3>
@@ -349,7 +346,7 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredOperatives.map((member) => (
+          {filteredMembers.map((member) => (
             <LeadershipCard
               key={member.id}
               member={member}
@@ -359,8 +356,8 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredOperatives.map((member) => (
-            <OperativeRow
+          {filteredMembers.map((member) => (
+            <MemberRow
               key={member.id}
               member={member}
               onSelect={(m) => setSelectedMember(m)}

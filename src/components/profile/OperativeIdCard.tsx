@@ -28,16 +28,16 @@ export const OperativeIdCard: React.FC<OperativeIdCardProps> = ({ member }) => {
       {/* Top Lanyard Cutout Slot */}
       <div className="w-16 h-1.5 mx-auto bg-zinc-800 rounded-full mb-4 border border-zinc-700" />
 
-      {/* Pass Header */}
+      {/* ID Header */}
       <div className="flex items-center justify-between pb-3 border-b border-zinc-800 text-[10px] text-zinc-400">
         <div className="flex items-center gap-1.5">
           <Sparkles size={11} className={styles.textColor} />
           <span className="font-bold text-white tracking-wider">SKILL DEVELOPMENT CLUB</span>
         </div>
-        <span className="text-[9px] text-zinc-500 uppercase">OFFICIAL PASS</span>
+        <span className="text-[9px] text-zinc-500 uppercase">OFFICIAL ID</span>
       </div>
 
-      {/* Role Badge */}
+      {/* Role Badge (Single authoritative role badge) */}
       <div className="mt-3 flex justify-start">
         <span className={styles.badgeClass}>{styles.label}</span>
       </div>
@@ -62,8 +62,8 @@ export const OperativeIdCard: React.FC<OperativeIdCardProps> = ({ member }) => {
 
         <div className="min-w-0 space-y-0.5">
           <h3 className="font-syne font-black text-base text-white truncate">{displayName}</h3>
-          <div className="text-[11px] font-mono font-bold text-amber-400 truncate">
-            {roleTitle}
+          <div className="text-[11px] font-mono text-zinc-400 truncate">
+            @{handle}
           </div>
         </div>
       </div>
@@ -102,10 +102,13 @@ export const OperativeIdCard: React.FC<OperativeIdCardProps> = ({ member }) => {
 
         <div className="text-right space-y-0.5">
           <div className="font-mono tracking-widest text-zinc-400 text-[10px]">||| | |||| | |||||</div>
-          <div className={`font-bold tracking-widest ${styles.textColor}`}>{styles.label}</div>
+          <div className="font-mono text-zinc-400 text-[9px] uppercase tracking-wider">
+            {member.opId || 'SDC MEMBER'}
+          </div>
         </div>
       </div>
     </div>
   );
 };
+export const MemberIdCard = OperativeIdCard;
 export default OperativeIdCard;

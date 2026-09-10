@@ -25,9 +25,9 @@ export const PhysicalPass: React.FC<PhysicalPassProps> = ({
         <div className="flex items-center gap-2">
           <span className="font-bold text-white tracking-widest flex items-center gap-1.5">
             <span className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
-            SDC // EVENT PASS
+            SDC • EVENT PASS
           </span>
-          <span>//</span>
+          <span>•</span>
           <span className="text-zinc-400">{pass.seatTier}</span>
         </div>
 
@@ -56,7 +56,7 @@ export const PhysicalPass: React.FC<PhysicalPassProps> = ({
             <div className="flex items-center gap-2">
               <Calendar size={12} className="text-purple-400" />
               <span>{pass.eventDate}</span>
-              <span className="text-zinc-500">//</span>
+              <span className="text-zinc-500">•</span>
               <Clock size={12} className="text-purple-400" />
               <span>{pass.eventTime}</span>
             </div>
@@ -74,7 +74,7 @@ export const PhysicalPass: React.FC<PhysicalPassProps> = ({
               <div className="text-zinc-400 text-[9px]">@{pass.attendeeCallsign}</div>
             </div>
             <div>
-              <div className="text-zinc-500">TRACK / TIER:</div>
+              <div className="text-zinc-500">TRACK / ROLE:</div>
               <div className="font-bold text-zinc-200 truncate">{pass.attendeeTrack}</div>
               <div className="text-emerald-400 text-[9px] font-bold">[VERIFIED]</div>
             </div>
@@ -104,7 +104,7 @@ export const PhysicalPass: React.FC<PhysicalPassProps> = ({
 
         <div className="flex items-center gap-3 text-zinc-400">
           <span>ISSUED: {pass.issuedAt}</span>
-          <span>//</span>
+          <span>•</span>
           <span className="text-white font-bold">VERIFIED</span>
         </div>
       </div>

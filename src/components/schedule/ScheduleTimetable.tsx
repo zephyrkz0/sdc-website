@@ -24,11 +24,11 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
 
   // New session form states
   const [newTitle, setNewTitle] = useState('');
-  const [newTrack, setNewTrack] = useState('Web Development');
+  const [newTrack, setNewTrack] = useState('');
   const [newDate, setNewDate] = useState('');
-  const [newTimeStart, setNewTimeStart] = useState('17:30');
-  const [newTimeEnd, setNewTimeEnd] = useState('19:30');
-  const [newVenue, setNewVenue] = useState('CUCEK Computer Lab');
+  const [newTimeStart, setNewTimeStart] = useState('');
+  const [newTimeEnd, setNewTimeEnd] = useState('');
+  const [newVenue, setNewVenue] = useState('');
   const [newInstructor, setNewInstructor] = useState('');
   const [newDescription, setNewDescription] = useState('');
 
@@ -64,13 +64,13 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
     const newSession: ScheduleSession = {
       id: `ses-${Date.now()}`,
       title: newTitle,
-      track: newTrack,
+      track: newTrack || 'General',
       date: newDate,
       timeStart: newTimeStart,
       timeEnd: newTimeEnd,
       venue: newVenue,
       instructorName: newInstructor || 'SDC Lead',
-      description: newDescription || 'Hands-on learning session for club members.',
+      description: newDescription,
       status: 'UPCOMING',
       sessionType: 'DAILY_SESSION',
     };
@@ -81,7 +81,11 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
     playSuccessChime();
     setAddModalOpen(false);
     setNewTitle('');
+    setNewTrack('');
     setNewDate('');
+    setNewTimeStart('');
+    setNewTimeEnd('');
+    setNewVenue('');
     setNewInstructor('');
     setNewDescription('');
   };
@@ -253,7 +257,6 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. WebGL Shader Live Coding Masterclass"
                   className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
                 />
               </div>
@@ -271,15 +274,12 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
                 </div>
                 <div>
                   <label className="block text-zinc-400 mb-1 text-[10px]">TRACK</label>
-                  <select
+                  <input
+                    type="text"
                     value={newTrack}
                     onChange={(e) => setNewTrack(e.target.value)}
                     className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
-                  >
-                    <option value="Web Development">Web Development</option>
-                    <option value="DSA">DSA</option>
-                    <option value="AI & Machine Learning">AI & Machine Learning</option>
-                  </select>
+                  />
                 </div>
               </div>
 
@@ -310,7 +310,6 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
                   type="text"
                   value={newVenue}
                   onChange={(e) => setNewVenue(e.target.value)}
-                  placeholder="e.g. CUCEK Computer Lab / Seminar Hall"
                   className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
                 />
               </div>
@@ -321,7 +320,6 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
                   type="text"
                   value={newInstructor}
                   onChange={(e) => setNewInstructor(e.target.value)}
-                  placeholder="e.g. Kasinath R"
                   className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
                 />
               </div>
@@ -332,7 +330,6 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
                   rows={2}
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
-                  placeholder="Brief curriculum or topics covered..."
                   className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
                 />
               </div>

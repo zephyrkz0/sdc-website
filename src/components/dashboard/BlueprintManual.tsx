@@ -8,23 +8,23 @@ export const BlueprintManual: React.FC = () => {
   const steps = [
     {
       num: 1,
-      title: 'OPERATIVE ONBOARDING & ID ASSIGNMENT',
-      desc: 'Verify public key credentials, generate unique operative serial ID (e.g. SDC-OP-XXXX), and join track workgroups.',
-      hardware: 'Personal Workstation + Auth Key',
+      title: 'MEMBER ONBOARDING & ID ASSIGNMENT',
+      desc: 'Verify your account credentials, generate your unique member ID (e.g. SDC-MEM-XXXX), and join domain track groups.',
+      hardware: 'Laptop / PC + Student Account',
       diagram: (
         <div className="flex justify-around items-center py-4 border border-zinc-800 bg-zinc-950 font-mono text-[10px] text-zinc-400">
           <div className="text-center">
             <div className="w-12 h-12 mx-auto mb-1 border border-dashed border-zinc-700 flex items-center justify-center text-white">
               KEY
             </div>
-            <span>PUBLIC_KEY</span>
+            <span>SIGN_UP</span>
           </div>
           <span className="text-zinc-600">&rarr;</span>
           <div className="text-center">
             <div className="w-12 h-12 mx-auto mb-1 border border-white flex items-center justify-center font-bold text-white bg-zinc-900">
               ID
             </div>
-            <span>MEMBER_PASS</span>
+            <span>MEMBER_ID</span>
           </div>
         </div>
       ),
@@ -32,52 +32,51 @@ export const BlueprintManual: React.FC = () => {
     {
       num: 2,
       title: 'SELECT DOMAIN TRACK',
-      desc: 'Select your primary discipline: Fullstack Systems, Neural AI, Cyber Ops, 3D Shaders, or Product Design.',
-      hardware: 'Target IDE & Dev Toolchain',
+      desc: 'Select your primary interest: Web Development, Data Structures & Algorithms, AI & Machine Learning, or Design.',
+      hardware: 'Code Editor & Learning Resources',
       diagram: (
-        <div className="grid grid-cols-5 gap-1.5 py-3 text-center font-mono text-[9px] border border-zinc-800 bg-zinc-950">
-          <div className="p-1.5 border border-zinc-800 text-zinc-300">CODE</div>
-          <div className="p-1.5 border border-zinc-800 text-zinc-300">AI/ML</div>
-          <div className="p-1.5 border border-zinc-800 text-zinc-300">3D/GL</div>
-          <div className="p-1.5 border border-zinc-800 text-zinc-300">CYBER</div>
+        <div className="grid grid-cols-4 gap-1.5 py-3 text-center font-mono text-[9px] border border-zinc-800 bg-zinc-950">
+          <div className="p-1.5 border border-zinc-800 text-zinc-300">WEB DEV</div>
+          <div className="p-1.5 border border-zinc-800 text-zinc-300">DSA</div>
+          <div className="p-1.5 border border-zinc-800 text-zinc-300">AI / ML</div>
           <div className="p-1.5 border border-zinc-800 text-zinc-300">DESIGN</div>
         </div>
       ),
     },
     {
       num: 3,
-      title: 'ATTEND WEEKLY SPRINTS & WORKSHOPS',
-      desc: 'Join weekly live coding sessions, pair programming sprints, and reverse engineering laboratories.',
-      hardware: 'Standard Dev Environment',
+      title: 'ATTEND REGULAR SESSIONS & WORKSHOPS',
+      desc: 'Join daily learning sessions (5:30 - 7:30 PM), hands-on workshops, and collaborative problem-solving.',
+      hardware: 'Laptop & CUCEK Lab Space',
       diagram: (
         <div className="flex items-center justify-between p-3 border border-zinc-800 bg-zinc-950 font-mono text-[10px] text-zinc-400">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
             <span className="text-zinc-200">LAB ROOM 402</span>
           </div>
-          <span className="text-white font-bold">120 MIN SPRINT</span>
+          <span className="text-white font-bold">DAILY SESSIONS</span>
         </div>
       ),
     },
     {
       num: 4,
-      title: 'DEPLOY OPEN-SOURCE PROJECTS',
-      desc: 'Collaborate on real-world repositories, create verified portfolio releases, and earn peer-reviewed badges.',
-      hardware: 'GitHub & Production Nodes',
+      title: 'BUILD & SHIP REAL PROJECTS',
+      desc: 'Collaborate on real-world projects, build your portfolio, and gain practical technical experience.',
+      hardware: 'GitHub & Project Repositories',
       diagram: (
         <div className="p-3 border border-zinc-800 bg-zinc-950 font-mono text-[10px] text-zinc-400 flex justify-between items-center">
           <span className="text-zinc-300">COMMITS MERGED</span>
           <span className="px-2 py-0.5 bg-zinc-800 text-zinc-200 border border-zinc-700 font-bold">
-            +50 HRS BADGE
+            PORTFOLIO PROJECT
           </span>
         </div>
       ),
     },
     {
       num: 5,
-      title: 'CLAIM EVENT & HACKATHON PASSES',
-      desc: 'Mint holographic digital passes with scannable QR codes for upcoming summits, hackathons, and demo days.',
-      hardware: 'PDF / Image Export',
+      title: 'GET EVENT & WORKSHOP PASSES',
+      desc: 'Get digital passes with scannable QR codes for upcoming workshops, hackathons, and club sessions.',
+      hardware: 'Digital Pass / PDF Export',
       diagram: (
         <div className="p-3 border border-zinc-800 bg-zinc-950 font-mono text-[10px] text-zinc-400 flex justify-between items-center">
           <div className="w-16 h-4 barcode-strip opacity-60" />

@@ -21,8 +21,8 @@ export const memberService = {
 
       return data.map((m) => ({
         id: m.id,
-        callsign: m.username || m.callsign || 'operative',
-        username: m.username || m.callsign || 'operative',
+        callsign: m.username || m.callsign || 'member',
+        username: m.username || m.callsign || 'member',
         fullName: m.full_name || `${m.first_name || ''} ${m.last_name || ''}`.trim() || 'SDC Member',
         firstName: m.first_name || '',
         lastName: m.last_name || '',
@@ -30,11 +30,11 @@ export const memberService = {
         role: m.role || 'Member',
         roleTitle: m.role || 'Member',
         tier: m.role?.toLowerCase().includes('super admin') || m.role?.toLowerCase().includes('master')
-          ? 'MASTER_ADMIN'
+          ? 'SUPER_ADMIN'
           : m.role?.toLowerCase().includes('admin') || m.role?.toLowerCase().includes('lead')
-          ? 'COMMAND_LEADERSHIP'
-          : 'ACTIVE_OPERATIVE',
-        track: m.track || 'CORE_CODE',
+          ? 'ADMIN'
+          : 'MEMBER',
+        track: m.track || 'Web Development',
         opId: m.op_id || `SDC-${m.id.substring(0, 6)}`,
         avatarUrl: m.avatar_url || '',
         bio: m.bio || '',

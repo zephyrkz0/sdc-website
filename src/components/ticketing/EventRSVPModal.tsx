@@ -27,11 +27,11 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
   const [selectedEventId, setSelectedEventId] = useState<string>(
     targetEvent?.id || eventsList[0]?.id || ''
   );
-  const [attendeeName, setAttendeeName] = useState(currentUser.fullName);
-  const [attendeeCallsign, setAttendeeCallsign] = useState(currentUser.callsign);
-  const [attendeeEmail, setAttendeeEmail] = useState(currentUser.email || 'member@cucek.in');
+  const [attendeeName, setAttendeeName] = useState(currentUser.fullName || '');
+  const [attendeeCallsign, setAttendeeCallsign] = useState(currentUser.callsign || '');
+  const [attendeeEmail, setAttendeeEmail] = useState(currentUser.email || '');
   const [seatTier, setSeatTier] = useState<PhysicalTicketPass['seatTier']>('MEMBER');
-  const [track, setTrack] = useState<DomainTrack>(currentUser.track);
+  const [track, setTrack] = useState<string>(currentUser.track || '');
   const [generatedPass, setGeneratedPass] = useState<PhysicalTicketPass | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -231,17 +231,12 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-zinc-400 mb-1">PRIMARY DOMAIN TRACK</label>
-                  <select
+                  <input
+                    type="text"
                     value={track}
-                    onChange={(e) => setTrack(e.target.value as DomainTrack)}
-                    className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none"
-                  >
-                    <option value="CORE_CODE">CORE_CODE</option>
-                    <option value="GENERATIVE_AI">GENERATIVE_AI</option>
-                    <option value="CYBER_SECURITY">CYBER_SECURITY</option>
-                    <option value="CREATIVE_3D">CREATIVE_3D</option>
-                    <option value="PRODUCT_DESIGN">PRODUCT_DESIGN</option>
-                  </select>
+                    onChange={(e) => setTrack(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none focus:border-zinc-500"
+                  />
                 </div>
               </div>
 
@@ -311,12 +306,12 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
               </div>
 
               <div className="flex justify-between items-center text-[10px] text-zinc-500 pt-2 font-mono">
-                <span>SCANNABLE AT VENUE TERMINALS</span>
+                <span>SCANNABLE AT VENUE ENTRANCE</span>
                 <button
                   onClick={() => setGeneratedPass(null)}
                   className="text-purple-400 hover:underline"
                 >
-                  &larr; MINT ANOTHER PASS
+                  &larr; REGISTER ANOTHER PASS
                 </button>
               </div>
             </div>

@@ -59,7 +59,7 @@ export const galleryService = {
         imageUrl: localUrl,
         description: metadata.description,
         date: new Date().toISOString().split('T')[0],
-        photographer: metadata.photographer || 'SDC Operative',
+        photographer: metadata.photographer || 'SDC Member',
         aspectRatio: metadata.aspectRatio || '16:9',
         tags: metadata.tags || [],
         createdAt: new Date().toISOString(),
@@ -99,7 +99,7 @@ export const galleryService = {
         image_url: publicUrl,
         description: metadata.description || '',
         date: new Date().toISOString().split('T')[0],
-        photographer: metadata.photographer || 'SDC Operative',
+        photographer: metadata.photographer || 'SDC Member',
         aspect_ratio: metadata.aspectRatio || '16:9',
         tags: metadata.tags || [],
       };
