@@ -103,7 +103,7 @@ export const OperativeIdCard: React.FC<OperativeIdCardProps> = ({ member }) => {
         <div className="text-right space-y-0.5">
           <div className="font-mono tracking-widest text-zinc-400 text-[10px]">||| | |||| | |||||</div>
           <div className="font-mono text-zinc-400 text-[9px] uppercase tracking-wider">
-            {member.opId || 'SDC MEMBER'}
+            {'SDC MEMBER'}
           </div>
         </div>
       </div>

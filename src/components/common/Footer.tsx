@@ -29,7 +29,6 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
               An active student technical community at CUCEK focused on upskilling, mentoring, daily hands-on coding sessions, talk sessions, and hackathons to prepare students for real-world careers.
             </p>
             <div className="flex items-center gap-2 pt-2 text-[10px]">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-zinc-300 font-bold">ESTABLISHED 2025</span>
             </div>
           </div>

@@ -42,7 +42,6 @@ export const GlobalLoadingScreen: React.FC<GlobalLoadingScreenProps> = ({
           {/* Top Corner Markers */}
           <div className="flex items-center justify-between text-[11px] text-zinc-500 tracking-wider">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-zinc-300 font-bold">SKILL DEVELOPMENT CLUB</span>
             </div>
             <div className="text-zinc-500">SDC PLATFORM</div>

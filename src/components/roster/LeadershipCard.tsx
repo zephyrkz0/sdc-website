@@ -104,14 +104,13 @@ export const LeadershipCard: React.FC<LeadershipCardProps> = ({ member, onSelect
         )}
       </div>
 
-      {/* Bottom Telemetry Bar */}
+      {/* Bottom Bar */}
       <div className="mt-5 pt-3 border-t border-zinc-900 flex items-center justify-between text-[10px] font-mono text-zinc-500">
         <span className="text-zinc-400">
-          LOGGED: <strong className="text-white">{member.hoursContributed || 0}h</strong>
+          HOURS: <strong className="text-white">{member.hoursContributed || 0}h</strong>
         </span>
-        <span className="text-emerald-400 flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          ACTIVE
+        <span className="text-zinc-400 font-bold">
+          SDC MEMBER
         </span>
       </div>
     </div>

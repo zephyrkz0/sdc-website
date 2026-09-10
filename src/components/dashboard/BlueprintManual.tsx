@@ -51,7 +51,7 @@ export const BlueprintManual: React.FC = () => {
       diagram: (
         <div className="flex items-center justify-between p-3 border border-zinc-800 bg-zinc-950 font-mono text-[10px] text-zinc-400">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="w-2 h-2 rounded-full bg-zinc-400" />
             <span className="text-zinc-200">LAB ROOM 402</span>
           </div>
           <span className="text-white font-bold">DAILY SESSIONS</span>

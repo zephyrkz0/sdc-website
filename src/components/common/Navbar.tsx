@@ -28,6 +28,7 @@ interface NavbarProps {
   setActiveTab: (tab: NavTab) => void;
   onOpenScanner?: () => void;
   onOpenRSVP?: () => void;
+  hasEvents?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -35,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   onOpenScanner,
   onOpenRSVP,
+  hasEvents = false,
 }) => {
   const { currentUser, logout, setAuthModalOpen, isAdmin } = useAuth();
 
@@ -152,17 +154,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
 
-          {/* RSVP PASS Button (Frame 5) */}
-          <button
-            onClick={() => {
-              playCyberClick();
-              if (onOpenRSVP) onOpenRSVP();
-            }}
-            className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-white text-black font-bold uppercase text-xs tracking-wider hover:bg-zinc-200 transition-all shadow-[0_0_12px_rgba(255,255,255,0.2)]"
-          >
-            <Sparkles size={13} />
-            <span>RSVP PASS</span>
-          </button>
+          {/* RSVP PASS Button (Frame 5) — hidden when no events */}
+          {hasEvents && (
+            <button
+              onClick={() => {
+                playCyberClick();
+                if (onOpenRSVP) onOpenRSVP();
+              }}
+              className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-white text-black font-bold uppercase text-xs tracking-wider hover:bg-zinc-200 transition-all shadow-[0_0_12px_rgba(255,255,255,0.2)]"
+            >
+              <Sparkles size={13} />
+              <span>RSVP PASS</span>
+            </button>
+          )}
 
           {/* User Account / Profile Badge */}
           {currentUser ? (
