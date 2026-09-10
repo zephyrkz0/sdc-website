@@ -9,6 +9,9 @@ import { TicketManagementView } from './components/ticketing/TicketManagementVie
 import { GalleryView } from './components/gallery/GalleryView';
 import { EventRSVPModal } from './components/ticketing/EventRSVPModal';
 import { TicketScannerModal } from './components/ticketing/TicketScannerModal';
+import { AuthModal } from './components/auth/AuthModal';
+import { OnboardingModal } from './components/auth/OnboardingModal';
+import { EmailVerificationModal } from './components/auth/EmailVerificationModal';
 import { GlobalLoadingScreen } from './components/common/GlobalLoadingScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { memberService } from './services/memberService';
@@ -119,7 +122,8 @@ const AppContent: React.FC = () => {
       const isSuperAdmin =
         (u.email || '').toLowerCase().includes('kashinath') ||
         (u.username || '').toLowerCase().includes('kashinath') ||
-        u.role === 'MASTER_ADMIN';
+        u.role === 'SUPER_ADMIN' ||
+        (u.role as any) === 'MASTER_ADMIN';
 
       const memberCard: ClubMember = {
         id: existing?.id || u.id,
@@ -288,6 +292,11 @@ const AppContent: React.FC = () => {
           onCheckIn={handleCheckInTicket}
         />
       )}
+
+      {/* Authentication & Onboarding Modals */}
+      <AuthModal />
+      <OnboardingModal />
+      <EmailVerificationModal />
 
       {/* Technical Footer (Frame 8) */}
       <Footer setActiveTab={setActiveTab} />

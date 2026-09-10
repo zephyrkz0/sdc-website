@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { GlbModelViewer } from './GlbModelViewer';
 import { NavTab } from '../common/Navbar';
 import { DomainRadar } from './DomainRadar';
 import { Users, Calendar } from 'lucide-react';
@@ -116,8 +115,8 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
 
         {/* WHO ARE WE? AND WHAT DO WE DO? */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Left: Mission & Details */}
-          <div className="lg:col-span-7 space-y-6">
+          {/* Mission & Details */}
+          <div className="lg:col-span-12 space-y-6">
             <div className="space-y-2">
               <h2 className="text-3xl sm:text-5xl font-syne font-black tracking-tight text-white uppercase">
                 WHO ARE WE?
@@ -153,13 +152,6 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
                 <Calendar size={14} />
                 <span>SESSION SCHEDULE</span>
               </button>
-            </div>
-          </div>
-
-          {/* Right: Interactive 3D Model */}
-          <div className="lg:col-span-5 flex justify-center items-center">
-            <div className="w-full max-w-[440px]">
-              <GlbModelViewer modelUrl="/assets/model.glb" />
             </div>
           </div>
         </section>

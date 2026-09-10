@@ -17,24 +17,24 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
   onAddSession,
 }) => {
   const [title, setTitle] = useState('');
-  const [code, setCode] = useState(`SDC-WS-${Math.floor(100 + Math.random() * 900)}`);
+  const [code, setCode] = useState('');
   const [sessionType, setSessionType] = useState<SessionType>('WORKSHOP');
-  const [track, setTrack] = useState<EventDifficultyTrack>('BEGINNER');
-  const [day, setDay] = useState('FRIDAY');
-  const [date, setDate] = useState('2026-09-18');
-  const [timeStart, setTimeStart] = useState('16:30');
-  const [timeEnd, setTimeEnd] = useState('18:30');
-  const [location, setLocation] = useState('CS Department Lab 2, Academic Block');
-  const [roomNumber, setRoomNumber] = useState('Lab 204');
+  const [track, setTrack] = useState('');
+  const [day, setDay] = useState('');
+  const [date, setDate] = useState('');
+  const [timeStart, setTimeStart] = useState('');
+  const [timeEnd, setTimeEnd] = useState('');
+  const [location, setLocation] = useState('');
+  const [roomNumber, setRoomNumber] = useState('');
   const [virtualStreamUrl, setVirtualStreamUrl] = useState('');
-  const [maxCapacity, setMaxCapacity] = useState(50);
+  const [maxCapacity, setMaxCapacity] = useState<number | string>('');
   const [instructorName, setInstructorName] = useState('');
   const [instructorUsername, setInstructorUsername] = useState('');
   const [instructorAvatar, setInstructorAvatar] = useState('');
-  const [curriculum, setCurriculum] = useState('Introduction, Hands-on Coding, API Integration, Live Q&A');
+  const [curriculum, setCurriculum] = useState('');
   const [description, setDescription] = useState('');
-  const [prerequisites, setPrerequisites] = useState('Basic programming knowledge, VS Code installed');
-  const [hardwareReqs, setHardwareReqs] = useState('Bring your personal laptop and charger.');
+  const [prerequisites, setPrerequisites] = useState('');
+  const [hardwareReqs, setHardwareReqs] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -199,8 +199,7 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Full-Stack Web Development with React & Node.js"
-                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-400"
+                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400"
               />
             </div>
             <div className="space-y-1">
@@ -210,8 +209,7 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                 required
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder="e.g. SDC-WS-101"
-                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-400 uppercase"
+                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400 uppercase"
               />
             </div>
           </div>
@@ -231,22 +229,19 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                 <option value="CODE">Live Project Building</option>
                 <option value="DESIGN">UI/UX & Product Design</option>
                 <option value="AI">AI & Machine Learning</option>
-                <option value="CYBER">Cyber Security & CTF</option>
+                <option value="CYBER">Cyber Security & Systems</option>
                 <option value="EVENT">Tech Talk / Guest Lecture</option>
               </select>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-zinc-400 uppercase font-bold">TARGET SKILL LEVEL</label>
-              <select
+              <label className="text-[10px] text-zinc-400 uppercase font-bold">TRACK / DOMAIN</label>
+              <input
+                type="text"
                 value={track}
-                onChange={(e) => setTrack(e.target.value as EventDifficultyTrack)}
+                onChange={(e) => setTrack(e.target.value)}
                 className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400"
-              >
-                <option value="BEGINNER">Beginner (No prior experience needed)</option>
-                <option value="INTERMEDIATE">Intermediate (Basic knowledge helpful)</option>
-                <option value="ADVANCED">Advanced (Deep dive)</option>
-              </select>
+              />
             </div>
           </div>
 
@@ -258,7 +253,6 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                 type="text"
                 value={day}
                 onChange={(e) => setDay(e.target.value)}
-                placeholder="Friday"
                 className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400 uppercase"
               />
             </div>
@@ -299,8 +293,7 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. CS Department Lab 2, Academic Block"
-                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-400"
+                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400"
               />
             </div>
             <div className="space-y-1">
@@ -309,21 +302,19 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                 type="text"
                 value={roomNumber}
                 onChange={(e) => setRoomNumber(e.target.value)}
-                placeholder="e.g. Lab 204 / Seminar Hall A"
-                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-400"
+                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400"
               />
             </div>
           </div>
 
           {/* Virtual Stream URL */}
           <div className="space-y-1">
-            <label className="text-[10px] text-zinc-400 uppercase font-bold">ONLINE MEETING / GOOGLE MEET LINK (OPTIONAL)</label>
+            <label className="text-[10px] text-zinc-400 uppercase font-bold">ONLINE MEETING LINK (OPTIONAL)</label>
             <input
               type="url"
               value={virtualStreamUrl}
               onChange={(e) => setVirtualStreamUrl(e.target.value)}
-              placeholder="https://meet.google.com/... or https://discord.gg/..."
-              className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-400"
+              className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400"
             />
           </div>
 
@@ -336,8 +327,7 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                 required
                 value={instructorName}
                 onChange={(e) => setInstructorName(e.target.value)}
-                placeholder="e.g. Kasinath R / Alex Mercer"
-                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-400"
+                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400"
               />
             </div>
             <div className="space-y-1">
@@ -348,8 +338,7 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                   type="text"
                   value={instructorUsername}
                   onChange={(e) => setInstructorUsername(e.target.value)}
-                  placeholder="username"
-                  className="w-full bg-[#121218] border border-zinc-800 pl-7 pr-3 py-2 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-400"
+                  className="w-full bg-[#121218] border border-zinc-800 pl-7 pr-3 py-2 text-white focus:outline-none focus:border-purple-400"
                 />
               </div>
             </div>
@@ -358,13 +347,12 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
           {/* Capacity & Description */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] text-zinc-400 uppercase font-bold">SEAT CAPACITY (RSVP LIMIT)</label>
+              <label className="text-[10px] text-zinc-400 uppercase font-bold">SEAT CAPACITY</label>
               <input
                 type="number"
-                min="5"
-                max="500"
+                min="1"
                 value={maxCapacity}
-                onChange={(e) => setMaxCapacity(parseInt(e.target.value) || 50)}
+                onChange={(e) => setMaxCapacity(e.target.value)}
                 className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400"
               />
             </div>
@@ -374,8 +362,7 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g. Practical hands-on session building and deploying web applications from scratch."
-                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-400"
+                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400"
               />
             </div>
           </div>
@@ -388,8 +375,7 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                 type="text"
                 value={curriculum}
                 onChange={(e) => setCurriculum(e.target.value)}
-                placeholder="e.g. React Setup, Component State, API Calls, Live Deployment"
-                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-400"
+                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400"
               />
             </div>
             <div className="space-y-1">
@@ -398,8 +384,7 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                 type="text"
                 value={prerequisites}
                 onChange={(e) => setPrerequisites(e.target.value)}
-                placeholder="e.g. Basic programming knowledge, VS Code installed"
-                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-400"
+                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400"
               />
             </div>
           </div>

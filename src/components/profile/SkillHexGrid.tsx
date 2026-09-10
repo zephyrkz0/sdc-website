@@ -11,7 +11,7 @@ export const SkillHexGrid: React.FC<SkillHexGridProps> = ({ skills }) => {
     { name: 'Node.js / Express', level: 90, cat: 'BACKEND' },
     { name: 'Python / Machine Learning', level: 85, cat: 'AI_ML' },
     { name: 'Figma / UI Design', level: 92, cat: 'DESIGN' },
-    { name: 'Database & SQL / Supabase', level: 80, cat: 'DATABASE' },
+    { name: 'Database & SQL Architecture', level: 80, cat: 'DATABASE' },
     { name: 'Competitive Programming / DSA', level: 75, cat: 'DSA' },
   ];
 

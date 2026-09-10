@@ -2,7 +2,7 @@ export type DomainTrack = 'CORE_CODE' | 'GENERATIVE_AI' | 'CYBER_SECURITY' | 'CR
 
 export type SessionType = 'CODE' | 'DESIGN' | 'AI' | 'CYBER' | 'HACKATHON' | 'EVENT' | 'WORKSHOP' | string;
 
-export type UserRole = 'MASTER_ADMIN' | 'ADMIN' | 'MEMBER';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'MEMBER';
 
 export interface ProjectPortfolioItem {
   id: string;
@@ -38,7 +38,7 @@ export interface ClubMember {
   email?: string;
   role?: string;
   roleTitle?: string;
-  tier?: 'MASTER_ADMIN' | 'SUPER_ADMIN' | 'COMMAND_LEADERSHIP' | 'CORE_EXCOM' | 'ADMIN' | 'ACTIVE_OPERATIVE' | 'MEMBER';
+  tier?: 'SUPER_ADMIN' | 'ADMIN' | 'MEMBER' | string;
   track: DomainTrack;
   opId?: string;
   avatarUrl?: string;
@@ -156,7 +156,7 @@ export interface PhysicalTicketPass {
   attendeeEmail: string;
   attendeeRole?: string;
   attendeeTrack?: DomainTrack;
-  seatTier?: 'GENERAL_OPERATIVE' | 'VIP_SPEAKER' | 'PRESS_EDITORIAL' | 'HACKER_ACCESS' | string;
+  seatTier?: 'GENERAL_ADMISSION' | 'VIP_SPEAKER' | 'MEMBER' | string;
   qrPayload: string;
   barcodeNumber: string;
   issuedAt?: string;
@@ -199,7 +199,8 @@ export interface GlobalClubStats {
   totalSessionsLogged: number;
   totalHoursExecuted: number;
   totalUpskilledMembers: number;
-  activeOperatives: number;
+  activeMembers?: number;
+  activeOperatives?: number;
   productionDeployments: number;
   globalRank: string;
   domainDistribution: {

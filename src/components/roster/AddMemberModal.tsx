@@ -20,13 +20,13 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('Core Member');
-  const [track, setTrack] = useState('Web Development');
+  const [role, setRole] = useState('');
+  const [track, setTrack] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [bio, setBio] = useState('');
-  const [skills, setSkills] = useState('TypeScript, React, Node.js');
-  const [hoursContributed, setHoursContributed] = useState(0);
+  const [skills, setSkills] = useState('');
+  const [hoursContributed, setHoursContributed] = useState<number | string>('');
   const [githubUrl, setGithubUrl] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [status, setStatus] = useState<'ACTIVE' | 'DEPLOYED' | 'STANDBY'>('ACTIVE');
@@ -87,8 +87,8 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       email: email.trim().toLowerCase(),
       role: role.trim(),
       roleTitle: role.trim(),
-      tier: role.toLowerCase().includes('admin') ? 'CORE_EXCOM' : 'ACTIVE_OPERATIVE',
-      opId: `SDC-OP-${Date.now().toString().slice(-4)}`,
+      tier: role.toLowerCase().includes('admin') ? 'ADMIN' : 'MEMBER',
+      opId: `SDC-MEM-${Date.now().toString().slice(-4)}`,
       track: track.trim(),
       avatarUrl: finalAvatarUrl || '',
       bio: bio.trim() || 'Active verified member of Skill Development Club.',
@@ -214,7 +214,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                     <span>CHOOSE FILE TO UPLOAD</span>
                     <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
                   </label>
-                  <p className="text-[10px] text-zinc-500">Directly uploads to Supabase storage bucket</p>
                 </div>
               </div>
             </div>
@@ -228,7 +227,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   required
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Alex"
                   className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
                 />
               </div>
@@ -239,7 +237,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   required
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Mercer"
                   className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
                 />
               </div>
@@ -255,7 +252,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="username"
                     className="w-full bg-zinc-950 border border-zinc-800 pl-7 pr-3 py-2 text-white focus:outline-none focus:border-zinc-500"
                   />
                 </div>
@@ -268,7 +264,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@email.com"
                   className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
                 />
               </div>
@@ -282,7 +277,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   type="text"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  placeholder="Lead Systems Architect"
                   className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
                 />
               </div>
@@ -293,7 +287,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   type="text"
                   value={track}
                   onChange={(e) => setTrack(e.target.value)}
-                  placeholder="Full-Stack / AI Systems"
                   className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
                 />
               </div>
@@ -306,7 +299,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 rows={2}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Software development, machine learning, projects..."
                 className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500 text-xs"
               />
             </div>
@@ -319,7 +311,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   type="text"
                   value={skills}
                   onChange={(e) => setSkills(e.target.value)}
-                  placeholder="TypeScript, Python, PyTorch"
                   className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
                 />
               </div>
@@ -343,7 +334,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   type="url"
                   value={githubUrl}
                   onChange={(e) => setGithubUrl(e.target.value)}
-                  placeholder="https://github.com/..."
                   className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
                 />
               </div>
@@ -353,7 +343,6 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   type="url"
                   value={linkedinUrl}
                   onChange={(e) => setLinkedinUrl(e.target.value)}
-                  placeholder="https://linkedin.com/in/..."
                   className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
                 />
               </div>

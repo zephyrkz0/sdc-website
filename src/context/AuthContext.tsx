@@ -19,6 +19,7 @@ export interface EmailDispatch {
 interface AuthContextType {
   currentUser: UserAccount | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   isMasterAdmin: boolean;
   allUsers: UserAccount[];
   pendingEmailDispatch: EmailDispatch | null;
@@ -53,8 +54,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return parsed
           .filter((u) => u.id !== 'usr-master-admin-01' && u.email !== 'admin@sdc.internal' && u.username !== 'admin')
           .map((u) => {
-            if (u.email?.toLowerCase().includes('kashinath') || u.username?.toLowerCase().includes('kashinath')) {
-              return { ...u, role: 'MASTER_ADMIN' as const };
+            if (u.email?.toLowerCase().includes('kashinath') || u.username?.toLowerCase().includes('kashinath') || (u.role as string) === 'MASTER_ADMIN') {
+              return { ...u, role: 'SUPER_ADMIN' as const };
             }
             return u;
           });
@@ -68,8 +69,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const saved = localStorage.getItem(LOCAL_STORAGE_SESSION_KEY);
       if (saved) {
         const parsed: UserAccount = JSON.parse(saved);
-        if (parsed.email?.toLowerCase().includes('kashinath') || parsed.username?.toLowerCase().includes('kashinath')) {
-          parsed.role = 'MASTER_ADMIN';
+        if (parsed.email?.toLowerCase().includes('kashinath') || parsed.username?.toLowerCase().includes('kashinath') || (parsed.role as string) === 'MASTER_ADMIN') {
+          parsed.role = 'SUPER_ADMIN';
         }
         return parsed;
       }
@@ -111,14 +112,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const avatarUrl = userMeta.avatar_url || userMeta.picture || userMeta.avatar || '';
         
         const isSuperAdminEmail = email.toLowerCase().includes('kashinath') || email.toLowerCase() === 'kashinath.r2017@gmail.com' || username.toLowerCase().includes('kashinath');
-        const role: UserRole = isSuperAdminEmail ? 'MASTER_ADMIN' : 'MEMBER';
+        const role: UserRole = isSuperAdminEmail ? 'SUPER_ADMIN' : 'MEMBER';
 
         const existing = allUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
         if (existing) {
           const updatedUser: UserAccount = {
             ...existing,
             avatarUrl: existing.avatarUrl || avatarUrl,
-            role: isSuperAdminEmail ? 'MASTER_ADMIN' : existing.role,
+            role: isSuperAdminEmail ? 'SUPER_ADMIN' : existing.role,
           };
           setCurrentUser(updatedUser);
         } else {
@@ -151,19 +152,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [allUsers]);
 
-  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'MASTER_ADMIN';
-  const isMasterAdmin = currentUser?.role === 'MASTER_ADMIN';
+  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN' || (currentUser?.role as any) === 'MASTER_ADMIN';
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || (currentUser?.role as any) === 'MASTER_ADMIN';
+  const isMasterAdmin = isSuperAdmin;
 
   const signIn = (email: string, password?: string) => {
     const cleanEmail = email.trim().toLowerCase();
     const user = allUsers.find((u) => u.email.toLowerCase() === cleanEmail || u.username?.toLowerCase() === cleanEmail);
 
     if (!user) {
-      return { success: false, message: 'Account not found. Please register first.' };
+      return { success: false, isNewUser: true, message: 'Account not found. Please click REGISTER above.' };
     }
 
     if (password && user.passwordHash && user.passwordHash !== password) {
-      return { success: false, message: 'Invalid password. Please try again or reset password.' };
+      return { success: false, isNewUser: false, message: 'Invalid password. Please try again or reset password.' };
     }
 
     setCurrentUser(user);
@@ -183,7 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const isSuperAdminEmail = cleanEmail.includes('kashinath') || cleanUsername.includes('kashinath');
-    const role: UserRole = isSuperAdminEmail ? 'MASTER_ADMIN' : 'MEMBER';
+    const role: UserRole = isSuperAdminEmail ? 'SUPER_ADMIN' : 'MEMBER';
 
     const newUser: UserAccount = {
       id: `usr-${Date.now()}`,
@@ -215,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fullName: newUser.fullName,
       firstName: newUser.firstName,
       lastName: newUser.lastName,
-      role: newUser.role === 'MASTER_ADMIN' ? 'Super Admin' : 'Member',
+      role: newUser.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Member',
       track: 'Web Development',
     });
 
@@ -248,7 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fullName: profileData?.fullName || cleanEmail.split('@')[0],
       email: cleanEmail,
       passwordHash: password,
-      role: isSuperAdminEmail ? 'MASTER_ADMIN' : 'MEMBER',
+      role: isSuperAdminEmail ? 'SUPER_ADMIN' : 'MEMBER',
       track: 'CORE_CODE',
       avatarUrl: '',
       bio: 'Member of CUCEK Skill Development Club.',
@@ -293,34 +295,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async () => {
     if (isSupabaseConfigured()) {
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-        },
-      });
-    } else {
-      const demoUser: UserAccount = {
-        id: 'usr-google-demo',
-        username: 'google_user',
-        firstName: 'Google',
-        lastName: 'User',
-        fullName: 'Google User',
-        email: 'user@gmail.com',
-        role: 'MEMBER',
-        track: 'CORE_CODE',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-        bio: 'CUCEK Member (Signed in with Google)',
-        skills: ['Web Development', 'React'],
-        projects: [],
-        hoursContributed: 10,
-        status: 'ACTIVE',
-        createdAt: new Date().toISOString(),
-        isVerified: true,
-      };
-      setAllUsers((prev) => (prev.some((u) => u.id === demoUser.id) ? prev : [demoUser, ...prev]));
-      setCurrentUser(demoUser);
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin,
+          },
+        });
+        if (error) {
+          console.warn('Supabase Google OAuth error, falling back to demo session:', error.message);
+          throw error;
+        }
+        if (data?.url) {
+          window.location.href = data.url;
+        }
+        return;
+      } catch (err) {
+        console.warn('Google Sign-In fallback activated:', err);
+      }
     }
+
+    const demoUser: UserAccount = {
+      id: 'usr-google-demo',
+      username: 'google_user',
+      firstName: 'Google',
+      lastName: 'User',
+      fullName: 'Google User',
+      email: 'user@gmail.com',
+      role: 'MEMBER',
+      track: 'CORE_CODE',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+      bio: 'CUCEK Member (Signed in with Google)',
+      skills: ['Web Development', 'React'],
+      projects: [],
+      hoursContributed: 10,
+      status: 'ACTIVE',
+      createdAt: new Date().toISOString(),
+      isVerified: true,
+      hasCompletedOnboarding: true,
+    };
+    setAllUsers((prev) => (prev.some((u) => u.id === demoUser.id) ? prev : [demoUser, ...prev]));
+    setCurrentUser(demoUser);
   };
 
   const logout = async () => {
@@ -390,7 +405,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated: UserAccount = {
       ...user,
       role: targetRole,
-      roleTitle: customPositionTitle || (targetRole === 'MASTER_ADMIN' ? 'Super Admin' : targetRole === 'ADMIN' ? 'Admin' : 'Member'),
+      roleTitle: customPositionTitle || (targetRole === 'SUPER_ADMIN' ? 'Super Admin' : targetRole === 'ADMIN' ? 'Admin' : 'Member'),
     };
 
     setAllUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)));
@@ -405,6 +420,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         currentUser,
         isAdmin,
+        isSuperAdmin,
         isMasterAdmin,
         allUsers,
         pendingEmailDispatch,

@@ -106,7 +106,7 @@ export const EmailVerificationModal: React.FC = () => {
           {step === 'VIEW_EMAIL' ? (
             <div className="mt-4 space-y-4">
               <p className="text-zinc-300">
-                A verification link was dispatched to:
+                A verification link was sent to:
               </p>
               <div className="p-3 bg-black border border-zinc-800 text-white font-bold break-all">
                 {pendingEmailDispatch.toEmail}
@@ -114,7 +114,7 @@ export const EmailVerificationModal: React.FC = () => {
 
               <div className="p-4 bg-zinc-900 border border-purple-500/40 space-y-3">
                 <div className="text-[10px] text-zinc-400">
-                  // SIMULATED INBOX DISPATCH
+                  SIMULATED EMAIL INBOX
                 </div>
                 <div className="text-sm font-bold text-white">
                   Skill Development Club — {isReset ? 'Reset Your Password' : 'Confirm Your Email'}

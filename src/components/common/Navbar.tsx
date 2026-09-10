@@ -203,7 +203,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         className="w-full text-left p-2 text-zinc-300 hover:text-white hover:bg-zinc-900 flex items-center gap-2"
                       >
                         <User size={13} />
-                        <span>Profile Pass</span>
+                        <span>Profile</span>
                       </button>
                       <button
                         onClick={() => {
@@ -280,6 +280,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {item.label}
               </button>
             ))}
+
+            {!currentUser && (
+              <button
+                onClick={() => {
+                  playCyberClick();
+                  setAuthModalOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-center p-3 text-xs font-bold uppercase tracking-wider transition-all bg-purple-950 border border-purple-600 text-purple-200 hover:bg-purple-900 mt-2"
+              >
+                SIGN IN / REGISTER
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

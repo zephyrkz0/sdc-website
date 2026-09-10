@@ -15,7 +15,6 @@ export const OperativeRow: React.FC<OperativeRowProps> = ({ member, onSelect }) 
   const styles = getRoleStyles(roleTier);
 
   const displayName = member.fullName || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Club Member';
-  const roleTitle = member.role || member.roleTitle || (roleTier === 'SUPER_ADMIN' ? 'Super Admin' : roleTier === 'ADMIN' ? 'Admin' : 'Core Member');
 
   return (
     <div
@@ -55,15 +54,11 @@ export const OperativeRow: React.FC<OperativeRowProps> = ({ member, onSelect }) 
             <span className={styles.badgeClass}>{styles.label}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 truncate">
-            <span className={`font-bold ${styles.textColor}`}>{roleTitle}</span>
-            {member.branch && (
-              <>
-                <span className="text-zinc-600">•</span>
-                <span className="text-zinc-500">{member.branch} {member.semester ? `(${member.semester})` : ''}</span>
-              </>
-            )}
-          </div>
+          {member.branch && (
+            <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-500 truncate">
+              <span>{member.branch} {member.semester ? `(${member.semester})` : ''}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -81,4 +76,5 @@ export const OperativeRow: React.FC<OperativeRowProps> = ({ member, onSelect }) 
     </div>
   );
 };
+export const MemberRow = OperativeRow;
 export default OperativeRow;

@@ -57,9 +57,9 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
       {/* Portfolio Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
         <div>
-          <div className="font-mono text-[10px] text-zinc-500">// PROJECT_REGISTRY</div>
+          <div className="font-mono text-[10px] text-zinc-500">PROJECT DIRECTORY</div>
           <h3 className="font-syne font-black text-2xl text-white uppercase tracking-tight">
-            SHIPPED REPOSITORIES & PORTFOLIO
+            MEMBER PROJECTS & PORTFOLIO
           </h3>
         </div>
 
@@ -148,7 +148,7 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
 
           <div className="relative w-full max-w-lg bg-zinc-950 border border-zinc-700 p-6 z-10 tech-corner-box shadow-2xl font-mono">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800 text-xs text-zinc-400">
-              <span className="text-white font-bold">[ADD_NEW_PROJECT_DEPLOYMENT]</span>
+              <span className="text-white font-bold uppercase tracking-wider">ADD NEW PROJECT</span>
               <button
                 onClick={() => setModalOpen(false)}
                 className="p-1 text-zinc-500 hover:text-white"
@@ -163,7 +163,6 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. WASM_NEURAL_ROUTER"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none focus:border-zinc-500"
@@ -190,7 +189,6 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
                 <textarea
                   required
                   rows={3}
-                  placeholder="Briefly describe what you built, technologies used, and problem solved..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none focus:border-zinc-500"
@@ -201,7 +199,6 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
                 <label className="block text-zinc-400 mb-1">TAGS (COMMA SEPARATED)</label>
                 <input
                   type="text"
-                  placeholder="Rust, Three.js, WebAudio"
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none"
@@ -213,7 +210,6 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
                   <label className="block text-zinc-400 mb-1">GITHUB URL</label>
                   <input
                     type="url"
-                    placeholder="https://github.com/..."
                     value={repoUrl}
                     onChange={(e) => setRepoUrl(e.target.value)}
                     className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none"
@@ -223,7 +219,6 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
                   <label className="block text-zinc-400 mb-1">DEMO URL</label>
                   <input
                     type="url"
-                    placeholder="https://demo.dev"
                     value={demoUrl}
                     onChange={(e) => setDemoUrl(e.target.value)}
                     className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none"

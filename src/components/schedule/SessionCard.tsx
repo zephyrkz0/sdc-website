@@ -77,9 +77,9 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, onRSVP }) => 
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-zinc-800 font-mono text-[10px] text-zinc-400 select-none">
         <div className="flex items-center gap-2">
           <span className="font-bold text-white tracking-widest">{session.code}</span>
-          <span>//</span>
+          <span>•</span>
           <span>{session.day || 'EVENT'}</span>
-          <span>//</span>
+          <span>•</span>
           <span className="text-zinc-300">{session.date}</span>
         </div>
 
@@ -122,7 +122,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, onRSVP }) => 
       {session.curriculum && session.curriculum.length > 0 && (
         <div className="mt-4 space-y-2">
           <div className="font-mono text-[9px] text-zinc-500 uppercase tracking-wider">
-            // CURRICULUM_MODULES
+            CURRICULUM TOPICS
           </div>
           <ul className="space-y-1 font-mono text-xs text-zinc-300">
             {session.curriculum.map((curr, idx) => (
@@ -195,7 +195,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, onRSVP }) => 
             className="px-4 py-2.5 bg-zinc-100 hover:bg-white text-black font-mono font-bold text-xs uppercase tracking-wider border border-white hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(255,255,255,0.2)] flex items-center gap-1.5"
           >
             <Sparkles size={12} />
-            <span>RSVP // GET PASS</span>
+            <span>RSVP • GET PASS</span>
           </button>
         </div>
       </div>

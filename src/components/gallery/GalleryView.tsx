@@ -82,10 +82,6 @@ export const GalleryView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-zinc-500 text-[10px]">
-            SHOWING: {filteredItems.length} ASSETS
-          </span>
-
           {isAdmin && (
             <button
               onClick={() => {
@@ -109,12 +105,12 @@ export const GalleryView: React.FC = () => {
           </div>
           <div className="space-y-1">
             <h4 className="font-syne font-black text-lg text-white uppercase">
-              GALLERY ARCHIVE EMPTY
+              NO PHOTOS UPLOADED YET
             </h4>
             <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
               {isAdmin
-                ? 'Click "UPLOAD PHOTO" above to add high-resolution captures directly to Supabase storage.'
-                : 'No captures uploaded for this category yet.'}
+                ? 'Click "+ UPLOAD PHOTO" above to add event and workshop photos to the gallery.'
+                : 'Photos from upcoming club sessions and hackathons will appear here.'}
             </p>
           </div>
           {isAdmin && (
@@ -126,7 +122,7 @@ export const GalleryView: React.FC = () => {
               className="px-5 py-2.5 bg-white text-black font-bold uppercase text-xs hover:bg-zinc-200 inline-flex items-center gap-1.5"
             >
               <Plus size={14} />
-              <span>+ UPLOAD FIRST CAPTURE</span>
+              <span>+ UPLOAD PHOTO</span>
             </button>
           )}
         </div>
@@ -178,7 +174,6 @@ export const GalleryView: React.FC = () => {
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. WebGL Masterclass"
                   className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
                 />
               </div>
@@ -205,7 +200,6 @@ export const GalleryView: React.FC = () => {
                   required
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://..."
                   className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
                 />
               </div>
@@ -216,7 +210,6 @@ export const GalleryView: React.FC = () => {
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Short note about the capture..."
                   className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
                 />
               </div>

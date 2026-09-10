@@ -48,7 +48,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
       confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
     } else {
       playCyberClick();
-      setErrorMsg(`NO VALID PASS FOUND FOR [${cleanInput}]. CHECK-IN REJECTED.`);
+      setErrorMsg(`No valid ticket found for [${cleanInput}].`);
     }
   };
 
@@ -116,7 +116,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
               />
 
               <span className="font-mono text-[9px] text-purple-300/80 uppercase">
-                OPTICAL_SCAN_ACTIVE
+                READY TO SCAN
               </span>
             </div>
           </div>
@@ -124,7 +124,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
           {/* Scan Input Form */}
           <form onSubmit={handleScan} className="mt-5 space-y-3">
             <label className="block text-[11px] text-zinc-400">
-              ENTER TICKET ID OR BARCODE DATA FOR IMMEDIATE AUTHENTICATION:
+              ENTER TICKET ID OR BARCODE DATA FOR CHECK-IN:
             </label>
             <div className="flex gap-2">
               <input
@@ -138,7 +138,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
                 type="submit"
                 className="px-5 py-2 bg-white text-black font-bold text-xs uppercase hover:bg-zinc-200"
               >
-                AUTHENTICATE
+                CHECK IN
               </button>
             </div>
           </form>
@@ -151,7 +151,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
             </div>
           )}
 
-          {/* Scanned Success Result Dossier */}
+          {/* Scanned Success Result Details */}
           {scannedResult && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -162,7 +162,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 size={16} /> PASS VERIFIED & CHECKED IN
                 </span>
-                <span>[ACCESS_GRANTED]</span>
+                <span>[CONFIRMED]</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-zinc-300 text-[11px]">
@@ -171,7 +171,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
                   <span className="font-bold text-white">{scannedResult.attendeeName}</span>
                 </div>
                 <div>
-                  <span className="text-zinc-500">CALLSIGN: </span>
+                  <span className="text-zinc-500">USERNAME: </span>
                   <span className="text-purple-400">@{scannedResult.attendeeCallsign}</span>
                 </div>
                 <div>
@@ -179,7 +179,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
                   <span className="text-white">{scannedResult.eventTitle}</span>
                 </div>
                 <div>
-                  <span className="text-zinc-500">SEAT TIER: </span>
+                  <span className="text-zinc-500">TICKET TYPE: </span>
                   <span className="text-zinc-200 font-bold">{scannedResult.seatTier}</span>
                 </div>
               </div>
