@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
-import { X, Eye, EyeOff, Mail, Lock, User, ArrowLeft, CheckCircle2, AlertCircle, KeyRound } from 'lucide-react';
+import { X, Eye, EyeOff, Mail, Lock, User, ArrowLeft, CheckCircle2, AlertCircle, KeyRound, Loader2 } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
+import { motion } from 'framer-motion';
 
 export const AuthModal: React.FC = () => {
   const { authModalOpen, setAuthModalOpen, signIn, signUp, sendPasswordReset, resetPassword, loginWithGoogle } = useAuth();
@@ -18,6 +19,8 @@ export const AuthModal: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  type GoogleAuthStatus = 'IDLE' | 'INITIALIZING' | 'CONTACTING_GOOGLE' | 'AWAITING_POPUP' | 'VERIFYING_SESSION' | 'REDIRECTING' | 'SUCCESS' | 'ERROR';
+  const [googleStatus, setGoogleStatus] = useState<GoogleAuthStatus>('IDLE');
 
   // Cleanly wipe all typed details whenever modal is closed or reopened
   useEffect(() => {
@@ -32,6 +35,7 @@ export const AuthModal: React.FC = () => {
       setErrorMsg('');
       setInfoMsg('');
       setIsLoading(false);
+      setGoogleStatus('IDLE');
     }
   }, [authModalOpen]);
 
@@ -47,6 +51,7 @@ export const AuthModal: React.FC = () => {
     setErrorMsg('');
     setInfoMsg('');
     setIsLoading(false);
+    setGoogleStatus('IDLE');
     setMode('SIGN_IN');
     setAuthModalOpen(false);
   };
@@ -105,7 +110,11 @@ export const AuthModal: React.FC = () => {
         const result = await signUp(cleanEmail, firstName, lastName, username, password);
         if (result.success) {
           playSuccessChime();
-          handleCloseModal();
+          if (result.requiresVerification) {
+            setInfoMsg(result.message);
+          } else {
+            handleCloseModal();
+          }
         } else {
           setErrorMsg(result.message);
         }
@@ -149,18 +158,39 @@ export const AuthModal: React.FC = () => {
 
   const handleGoogleAuth = async () => {
     playCyberClick();
-    setIsLoading(true);
     setErrorMsg('');
     setInfoMsg('');
+    setGoogleStatus('INITIALIZING');
+
     try {
-      await loginWithGoogle();
-      playSuccessChime();
-      handleCloseModal();
+      const res = await loginWithGoogle({
+        onStatusChange: (status: any) => {
+          setGoogleStatus(status);
+        },
+      });
+
+      if (res?.redirected) {
+        setGoogleStatus('REDIRECTING');
+        return;
+      }
+
+      if (res?.success) {
+        setGoogleStatus('SUCCESS');
+        playSuccessChime();
+        setTimeout(() => {
+          setGoogleStatus('IDLE');
+          handleCloseModal();
+        }, 500);
+      } else {
+        setGoogleStatus('IDLE');
+        if (res?.error) {
+          setErrorMsg(res.error);
+        }
+      }
     } catch (err: any) {
       console.error(err);
+      setGoogleStatus('IDLE');
       setErrorMsg('Google Sign-In was cancelled or encountered an error.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -254,9 +284,93 @@ export const AuthModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Mode Switcher Tabs (Sign In vs Register) */}
-        {isStandardAuth && (
-          <div className="grid grid-cols-2 gap-1 mt-4 p-1 bg-zinc-950 border border-zinc-800 text-xs font-mono">
+        {googleStatus !== 'IDLE' ? (
+          /* Clean Professional Google Authentication State */
+          <div className="py-8 px-4 space-y-6 text-center select-none font-sans">
+            {/* Centered Icon */}
+            <div className="flex justify-center items-center">
+              <div className="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center relative shadow-lg">
+                {googleStatus === 'SUCCESS' ? (
+                  <motion.div
+                    initial={{ scale: 0.6, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <CheckCircle2 size={32} className="text-emerald-400" />
+                  </motion.div>
+                ) : (
+                  <svg className="w-8 h-8" viewBox="0 0 24 24">
+                    <path
+                      fill="#EA4335"
+                      d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"
+                    />
+                    <path
+                      fill="#4285F4"
+                      d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"
+                    />
+                  </svg>
+                )}
+              </div>
+            </div>
+
+            {/* Clear, Professional Text */}
+            <div className="space-y-1.5">
+              <h3 className="text-base font-semibold text-white tracking-normal font-sans">
+                {googleStatus === 'SUCCESS'
+                  ? 'Signed in successfully'
+                  : googleStatus === 'VERIFYING_SESSION'
+                  ? 'Verifying account'
+                  : googleStatus === 'REDIRECTING'
+                  ? 'Connecting to Google'
+                  : 'Signing in with Google'}
+              </h3>
+              <p className="text-xs text-zinc-400 max-w-xs mx-auto leading-normal">
+                {googleStatus === 'SUCCESS'
+                  ? 'Taking you to your dashboard...'
+                  : googleStatus === 'VERIFYING_SESSION'
+                  ? 'Setting up your session, please wait a moment...'
+                  : googleStatus === 'REDIRECTING'
+                  ? 'Redirecting to Google sign-in...'
+                  : 'Please complete the sign-in in the Google pop-up window.'}
+              </p>
+            </div>
+
+            {/* Subtle Progress Spinner */}
+            {googleStatus !== 'SUCCESS' && (
+              <div className="flex justify-center items-center py-1">
+                <Loader2 size={20} className="animate-spin text-zinc-400" />
+              </div>
+            )}
+
+            {/* Cancel Button */}
+            {googleStatus !== 'SUCCESS' && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playCyberClick();
+                    setGoogleStatus('IDLE');
+                  }}
+                  className="px-4 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-medium rounded transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Mode Switcher Tabs (Sign In vs Register) */}
+            {isStandardAuth && (
+              <div className="grid grid-cols-2 gap-1 mt-4 p-1 bg-zinc-950 border border-zinc-800 text-xs font-mono">
             <button
               type="button"
               onClick={() => handleModeSwitch('SIGN_IN')}
@@ -531,16 +645,18 @@ export const AuthModal: React.FC = () => {
             )}
           </button>
 
-          {!isStandardAuth && (
-            <button
-              type="button"
-              onClick={() => handleModeSwitch('SIGN_IN')}
-              className="w-full py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors mt-2"
-            >
-              ← RETURN TO SIGN IN
-            </button>
-          )}
-        </form>
+              {!isStandardAuth && (
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch('SIGN_IN')}
+                  className="w-full py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors mt-2"
+                >
+                  ← RETURN TO SIGN IN
+                </button>
+              )}
+            </form>
+          </>
+        )}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { ClubMember } from '../../types';
 import { X, Upload, User, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { memberService } from '../../services/memberService';
+import { AvatarImage } from '../common/AvatarImage';
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -202,11 +203,13 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               <label className="text-[10px] text-zinc-400 uppercase tracking-wider">PROFILE PHOTO</label>
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-zinc-900 border border-zinc-700 overflow-hidden flex items-center justify-center relative shrink-0">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <User size={24} className="text-zinc-600" />
-                  )}
+                  <AvatarImage
+                    src={avatarUrl}
+                    alt="Preview"
+                    fallbackText={firstName?.[0] || 'U'}
+                    className="w-full h-full object-cover"
+                    fallbackClassName="font-syne font-bold text-xl text-zinc-400 uppercase"
+                  />
                 </div>
                 <div className="flex-1 space-y-2">
                   <label className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-zinc-500 cursor-pointer transition-colors text-xs">

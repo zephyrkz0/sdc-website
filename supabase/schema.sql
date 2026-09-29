@@ -33,9 +33,14 @@ CREATE TABLE IF NOT EXISTS public.members (
 -- Migration for existing databases:
 ALTER TABLE public.members ADD COLUMN IF NOT EXISTS branch TEXT DEFAULT '';
 ALTER TABLE public.members ADD COLUMN IF NOT EXISTS semester TEXT DEFAULT '';
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS last_sign_in_at TIMESTAMPTZ;
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS has_completed_onboarding BOOLEAN DEFAULT false;
 
--- Make kashinath.r2017@gmail.com Super Admin:
-UPDATE public.members SET role = 'SUPER_ADMIN' WHERE email = 'kashinath.r2017@gmail.com';
+CREATE INDEX IF NOT EXISTS idx_members_email ON public.members (email);
+CREATE INDEX IF NOT EXISTS idx_members_username ON public.members (username);
+CREATE INDEX IF NOT EXISTS idx_members_user_id ON public.members (user_id);
 
 -- ==========================================================
 -- 3. EVENTS TABLE (Upcoming Sessions & Workshops)
@@ -130,14 +135,17 @@ CREATE TABLE IF NOT EXISTS public.gallery_items (
 INSERT INTO storage.buckets (id, name, public)
 VALUES 
     ('avatars', 'avatars', true),
+    ('club-assets', 'club-assets', true),
     ('gallery-uploads', 'gallery-uploads', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage Security Policies (Public Read Access)
 CREATE POLICY "Public Read Avatars" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+CREATE POLICY "Public Read Club Assets" ON storage.objects FOR SELECT USING (bucket_id = 'club-assets');
 CREATE POLICY "Public Read Gallery" ON storage.objects FOR SELECT USING (bucket_id = 'gallery-uploads');
 
 CREATE POLICY "Allow Upload Avatars" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'avatars');
+CREATE POLICY "Allow Upload Club Assets" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'club-assets');
 CREATE POLICY "Allow Upload Gallery" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'gallery-uploads');
 
 -- ==========================================================

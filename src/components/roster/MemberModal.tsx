@@ -6,6 +6,7 @@ import { ClubMember } from '../../types';
 import { ChromeBadge } from '../common/ChromeBadge';
 import { playCyberClick } from '../common/AudioEffects';
 import { getRoleTier, getRoleStyles } from '../../utils/roleUtils';
+import { AvatarImage } from '../common/AvatarImage';
 
 interface MemberModalProps {
   member: ClubMember | null;
@@ -115,20 +116,13 @@ export const MemberModal: React.FC<MemberModalProps> = ({ member, onClose }) => 
           <div
             className={`w-24 h-24 sm:w-28 sm:h-28 shrink-0 overflow-hidden flex items-center justify-center bg-black ${styles.avatarBorderClass}`}
           >
-            {member.avatarUrl ? (
-              <img
-                src={member.avatarUrl}
-                alt={name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            ) : (
-              <span className="font-syne font-black text-3xl text-purple-300 uppercase select-none">
-                {name.charAt(0) || handle.charAt(0) || 'M'}
-              </span>
-            )}
+            <AvatarImage
+              src={member.avatarUrl}
+              alt={name}
+              fallbackText={name.charAt(0) || handle.charAt(0) || 'M'}
+              className="w-full h-full object-cover"
+              fallbackClassName="font-syne font-black text-3xl text-purple-300 uppercase select-none"
+            />
           </div>
 
           <div className="space-y-1.5 flex-1 min-w-0">

@@ -34,9 +34,6 @@ CREATE TABLE IF NOT EXISTS public.members (
 ALTER TABLE public.members ADD COLUMN IF NOT EXISTS branch TEXT DEFAULT '';
 ALTER TABLE public.members ADD COLUMN IF NOT EXISTS semester TEXT DEFAULT '';
 
--- Make kashinath.r2017@gmail.com Super Admin:
-UPDATE public.members SET role = 'MASTER_ADMIN' WHERE email = 'kashinath.r2017@gmail.com';
-
 -- ==========================================================
 -- 3. EVENTS TABLE (Upcoming Sessions & Workshops)
 -- ==========================================================

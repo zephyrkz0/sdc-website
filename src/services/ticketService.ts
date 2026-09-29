@@ -1,6 +1,11 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { PhysicalTicketPass } from '../types';
 
+const isValidUUID = (str?: string | null): boolean => {
+  if (!str || typeof str !== 'string') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+};
+
 export const ticketService = {
   // Mint a new RSVP Ticket Pass
   async mintTicket(ticket: PhysicalTicketPass): Promise<PhysicalTicketPass> {
@@ -20,13 +25,14 @@ export const ticketService = {
     }
 
     try {
+      const isEventUUID = isValidUUID(fullTicket.eventId);
       const dbPayload = {
         ticket_id: fullTicket.ticketId,
         user_id: fullTicket.attendeeEmail,
         username: fullTicket.attendeeCallsign,
         user_name: fullTicket.attendeeName,
         user_email: fullTicket.attendeeEmail,
-        event_id: fullTicket.eventId.includes('local') ? null : fullTicket.eventId,
+        event_id: isEventUUID ? fullTicket.eventId : null,
         event_title: fullTicket.eventTitle,
         event_date: fullTicket.eventDate,
         event_time: fullTicket.eventTime,
@@ -47,7 +53,7 @@ export const ticketService = {
         return fullTicket;
       }
 
-      if (fullTicket.eventId && !fullTicket.eventId.includes('local')) {
+      if (isEventUUID) {
         try {
           await supabase.rpc('increment_rsvp', { event_id: fullTicket.eventId });
         } catch {}
@@ -192,7 +198,7 @@ export const ticketService = {
       }
 
       // Decrement RSVP count for the event to free up capacity
-      if (eventId && !eventId.includes('local') && eventId !== 'evt-custom') {
+      if (isValidUUID(eventId)) {
         try {
           await supabase.rpc('decrement_rsvp', { event_id: eventId });
         } catch (rpcErr) {

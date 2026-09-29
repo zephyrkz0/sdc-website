@@ -2,6 +2,7 @@ import React from 'react';
 import { ClubMember } from '../../types';
 import { QrCode, Sparkles } from 'lucide-react';
 import { getRoleTier, getRoleStyles } from '../../utils/roleUtils';
+import { AvatarImage } from '../common/AvatarImage';
 
 interface OperativeIdCardProps {
   member: Partial<ClubMember>;
@@ -14,12 +15,12 @@ export const OperativeIdCard: React.FC<OperativeIdCardProps> = ({ member }) => {
   const displayName =
     member.fullName ||
     `${member.firstName || ''} ${member.lastName || ''}`.trim() ||
-    'Kasinath R';
+    'SDC Member';
   const roleTitle =
     member.role ||
     member.roleTitle ||
     (roleTier === 'SUPER_ADMIN' ? 'CLUB LEAD' : roleTier === 'ADMIN' ? 'ADMIN' : 'CLUB MEMBER');
-  const handle = member.username || member.callsign || 'zephyrkz0';
+  const handle = member.username || member.callsign || 'member';
 
   return (
     <div
@@ -47,17 +48,13 @@ export const OperativeIdCard: React.FC<OperativeIdCardProps> = ({ member }) => {
         <div
           className={`w-16 h-16 shrink-0 overflow-hidden flex items-center justify-center bg-black ${styles.avatarBorderClass}`}
         >
-          {member.avatarUrl ? (
-            <img
-              src={member.avatarUrl}
-              alt={displayName}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className={`font-syne font-black text-2xl uppercase ${styles.textColor}`}>
-              {displayName.charAt(0) || 'K'}
-            </span>
-          )}
+          <AvatarImage
+            src={member.avatarUrl}
+            alt={displayName}
+            fallbackText={displayName.charAt(0) || 'K'}
+            className="w-full h-full object-cover"
+            fallbackClassName={`font-syne font-black text-2xl uppercase ${styles.textColor}`}
+          />
         </div>
 
         <div className="min-w-0 space-y-0.5">

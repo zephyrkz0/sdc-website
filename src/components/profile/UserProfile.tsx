@@ -18,6 +18,7 @@ import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import html2canvas from 'html2canvas';
 import { memberService } from '../../services/memberService';
 import { getRoleTier, getRoleStyles } from '../../utils/roleUtils';
+import { AvatarImage } from '../common/AvatarImage';
 
 interface UserProfileProps {
   userProfile?: ClubMember;
@@ -81,15 +82,17 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           <Lock size={28} className="mx-auto text-zinc-400" />
           <h3 className="font-syne font-bold text-lg text-white">SIGN IN REQUIRED</h3>
           <p className="text-xs text-zinc-400">Please sign in to view and manage your profile.</p>
-          <button
-            onClick={() => {
-              playCyberClick();
-              setAuthModalOpen(true);
-            }}
-            className="px-6 py-2.5 bg-white text-black font-bold uppercase text-xs"
-          >
-            SIGN IN / REGISTER
-          </button>
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                playCyberClick();
+                setAuthModalOpen(true);
+              }}
+              className="px-6 py-2.5 bg-white text-black font-bold uppercase text-xs hover:bg-zinc-200 transition-colors"
+            >
+              SIGN IN / REGISTER
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -116,6 +119,25 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       link.click();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAvatar(true);
+    playCyberClick();
+    try {
+      const uploadedUrl = await memberService.uploadAvatar(file);
+      if (uploadedUrl) {
+        setAvatarUrl(uploadedUrl);
+        playSuccessChime();
+      }
+    } catch (err) {
+      console.error('Avatar upload failed:', err);
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -230,6 +252,54 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
           {isEditing ? (
             <form onSubmit={handleSaveProfile} className="space-y-4 text-xs font-mono">
+              {/* Profile Photo Upload Control */}
+              <div className="p-3.5 bg-black/60 border border-zinc-800 space-y-2">
+                <label className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider block">
+                  PROFILE PHOTO
+                </label>
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-14 h-14 shrink-0 overflow-hidden flex items-center justify-center bg-black ${roleStyles.avatarBorderClass}`}
+                  >
+                    <AvatarImage
+                      src={avatarUrl}
+                      alt="Avatar"
+                      fallbackText={firstName?.[0] || activeUser.username?.[0] || 'U'}
+                      className="w-full h-full object-cover"
+                      fallbackClassName={`font-syne font-black text-xl uppercase ${roleStyles.textColor}`}
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="px-3 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-amber-400 text-white cursor-pointer text-[10px] font-bold uppercase flex items-center gap-1.5 transition-colors">
+                      <Camera size={12} />
+                      <span>{isUploadingAvatar ? 'UPLOADING...' : 'CHANGE PHOTO'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        disabled={isUploadingAvatar}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playCyberClick();
+                          setAvatarUrl('');
+                        }}
+                        className="px-2.5 py-1.5 bg-red-950/40 border border-red-800/80 hover:bg-red-900/60 text-red-300 text-[10px] font-bold uppercase flex items-center gap-1 transition-colors"
+                      >
+                        <Trash2 size={12} />
+                        <span>REMOVE</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-zinc-400 text-[10px] mb-1">FIRST NAME</label>

@@ -4,6 +4,7 @@ import { ChromeBadge } from '../common/ChromeBadge';
 import { ArrowUpRight, Crown, Shield } from 'lucide-react';
 import { playCyberClick, playHoverBeep } from '../common/AudioEffects';
 import { getRoleTier, getRoleStyles } from '../../utils/roleUtils';
+import { AvatarImage } from '../common/AvatarImage';
 
 interface OperativeRowProps {
   member: ClubMember;
@@ -30,20 +31,13 @@ export const OperativeRow: React.FC<OperativeRowProps> = ({ member, onSelect }) 
         <div
           className={`w-10 h-10 shrink-0 overflow-hidden flex items-center justify-center bg-black ${styles.avatarBorderClass}`}
         >
-          {member.avatarUrl ? (
-            <img
-              src={member.avatarUrl}
-              alt={displayName}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          ) : (
-            <span className={`font-syne font-black text-sm uppercase ${styles.textColor}`}>
-              {displayName.charAt(0) || 'M'}
-            </span>
-          )}
+          <AvatarImage
+            src={member.avatarUrl}
+            alt={displayName}
+            fallbackText={displayName.charAt(0) || 'M'}
+            className="w-full h-full object-cover"
+            fallbackClassName={`font-syne font-black text-sm uppercase ${styles.textColor}`}
+          />
         </div>
 
         <div className="min-w-0">
