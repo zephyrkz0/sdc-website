@@ -4,6 +4,7 @@ import { ChromeBadge } from '../common/ChromeBadge';
 import { Sparkles, ArrowUpRight, Shield, Crown } from 'lucide-react';
 import { playCyberClick, playHoverBeep } from '../common/AudioEffects';
 import { getRoleTier, getRoleStyles } from '../../utils/roleUtils';
+import { AvatarImage } from '../common/AvatarImage';
 
 interface LeadershipCardProps {
   member: ClubMember;
@@ -50,20 +51,13 @@ export const LeadershipCard: React.FC<LeadershipCardProps> = ({ member, onSelect
           <div
             className={`w-16 h-16 shrink-0 overflow-hidden flex items-center justify-center bg-black ${styles.avatarBorderClass}`}
           >
-            {member.avatarUrl ? (
-              <img
-                src={member.avatarUrl}
-                alt={displayName}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            ) : (
-              <span className={`font-syne font-black text-2xl uppercase ${styles.textColor}`}>
-                {displayName.charAt(0) || 'M'}
-              </span>
-            )}
+            <AvatarImage
+              src={member.avatarUrl}
+              alt={displayName}
+              fallbackText={displayName.charAt(0) || 'M'}
+              className="w-full h-full object-cover"
+              fallbackClassName={`font-syne font-black text-2xl uppercase ${styles.textColor}`}
+            />
           </div>
 
           <div className="space-y-1 min-w-0 flex-1">

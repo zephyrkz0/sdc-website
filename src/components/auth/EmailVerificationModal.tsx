@@ -43,18 +43,18 @@ export const EmailVerificationModal: React.FC = () => {
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsSubmitting(false);
 
       if (isReset) {
-        const success = resetPassword(pendingEmailDispatch.toEmail, password);
+        const success = await resetPassword(pendingEmailDispatch.toEmail, password);
         if (success) {
           playSuccessChime();
         } else {
           setErrorMsg('Failed to reset password.');
         }
       } else {
-        const success = verifyEmailAndSetPassword(pendingEmailDispatch.toEmail, password, {
+        const success = await verifyEmailAndSetPassword(pendingEmailDispatch.toEmail, password, {
           fullName: fullName || pendingEmailDispatch.toEmail.split('@')[0],
           callsign: (callsign || pendingEmailDispatch.toEmail.split('@')[0]).toUpperCase(),
         });

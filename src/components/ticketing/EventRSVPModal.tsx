@@ -12,7 +12,7 @@ interface EventRSVPModalProps {
   onClose: () => void;
   targetEvent?: ClubEvent | ScheduleSession | null;
   eventsList: ClubEvent[];
-  currentUser: ClubMember;
+  currentUser?: ClubMember | null;
   isAdmin?: boolean;
   onSaveTicket: (pass: PhysicalTicketPass) => void;
 }
@@ -29,13 +29,22 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
   const [selectedEventId, setSelectedEventId] = useState<string>(
     targetEvent?.id || eventsList[0]?.id || ''
   );
-  const [attendeeName, setAttendeeName] = useState(currentUser.fullName || '');
-  const [attendeeCallsign, setAttendeeCallsign] = useState(currentUser.callsign || '');
-  const [attendeeEmail, setAttendeeEmail] = useState(currentUser.email || '');
-  const [seatTier, setSeatTier] = useState<PhysicalTicketPass['seatTier']>('MEMBER');
-  const [track, setTrack] = useState<string>(currentUser.track || '');
+  const [attendeeName, setAttendeeName] = useState(currentUser?.fullName || '');
+  const [attendeeCallsign, setAttendeeCallsign] = useState(currentUser?.callsign || currentUser?.username || '');
+  const [attendeeEmail, setAttendeeEmail] = useState(currentUser?.email || '');
+  const [seatTier, setSeatTier] = useState<PhysicalTicketPass['seatTier']>('ATTENDEE');
+  const [track, setTrack] = useState<string>(currentUser?.track || 'Web Development');
   const [generatedPass, setGeneratedPass] = useState<PhysicalTicketPass | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setAttendeeName(currentUser?.fullName || '');
+      setAttendeeCallsign(currentUser?.callsign || currentUser?.username || '');
+      setAttendeeEmail(currentUser?.email || '');
+      if (currentUser?.track) setTrack(currentUser.track);
+    }
+  }, [isOpen, currentUser]);
 
   if (!isOpen) return null;
 
@@ -74,16 +83,16 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
       eventDate: currentEvent?.date || (targetEvent ? targetEvent.date : '2026-09-18'),
       eventTime: 'time' in (currentEvent || {}) ? (currentEvent as any).time : '17:30 - 19:30',
       eventLocation: currentEvent?.location || (targetEvent ? (targetEvent as any).location || (targetEvent as any).venue : 'CUCEK Computer Lab') || 'CUCEK Computer Lab',
-      attendeeName: attendeeName || currentUser.fullName || 'Member',
-      attendeeCallsign: attendeeCallsign || currentUser.callsign || currentUser.username || 'member',
+      attendeeName: attendeeName || currentUser?.fullName || 'Member',
+      attendeeCallsign: attendeeCallsign || currentUser?.callsign || currentUser?.username || 'member',
       attendeeEmail,
-      attendeeRole: currentUser.roleTitle || currentUser.role || 'Member',
+      attendeeRole: currentUser?.roleTitle || currentUser?.role || 'Member',
       attendeeTrack: track,
       seatTier,
       qrPayload: JSON.stringify({
         tkt: ticketSerial,
-        user: attendeeName || currentUser.fullName,
-        role: currentUser.roleTitle || currentUser.role,
+        user: attendeeName || currentUser?.fullName || 'Member',
+        role: currentUser?.roleTitle || currentUser?.role || 'Member',
         event: currentEvent?.title,
         sec: secCode,
       }),

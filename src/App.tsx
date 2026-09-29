@@ -22,7 +22,6 @@ import {
   CLUB_MEMBERS,
   SCHEDULE_SESSIONS,
   CLUB_EVENTS,
-  CURRENT_USER_PROFILE,
   INITIAL_TICKETS,
   TERMINAL_LOGS,
 } from './data/mockData';
@@ -85,6 +84,28 @@ const AppContent: React.FC = () => {
         if (liveTickets && liveTickets.length > 0) {
           setTickets(liveTickets);
         }
+
+        // Auto-sync currentUser profile to Supabase members table
+        try {
+          await memberService.createOrUpdateMember({
+            id: currentUser.id,
+            userId: currentUser.userId || currentUser.id,
+            username: currentUser.username,
+            firstName: currentUser.firstName,
+            lastName: currentUser.lastName,
+            fullName: currentUser.fullName,
+            email: currentUser.email,
+            role: currentUser.roleTitle || currentUser.role || 'Member',
+            track: currentUser.track || 'Web Development',
+            branch: currentUser.branch || '',
+            semester: currentUser.semester || '',
+            bio: currentUser.bio || '',
+            skills: currentUser.skills || [],
+            avatarUrl: currentUser.avatarUrl || '',
+          });
+        } catch (syncErr) {
+          console.warn('Auto-sync currentUser to Supabase notice:', syncErr);
+        }
       }
     };
 
@@ -120,8 +141,6 @@ const AppContent: React.FC = () => {
     allUsers.forEach((u) => {
       const existing = findExisting(u);
       const isSuperAdmin =
-        (u.email || '').toLowerCase().includes('kashinath') ||
-        (u.username || '').toLowerCase().includes('kashinath') ||
         u.role === 'SUPER_ADMIN' ||
         (u.role as any) === 'MASTER_ADMIN';
 
@@ -140,7 +159,7 @@ const AppContent: React.FC = () => {
         track: u.track || existing?.track || 'Web Development',
         branch: u.branch || existing?.branch || '',
         semester: u.semester || existing?.semester || '',
-        avatarUrl: u.avatarUrl || existing?.avatarUrl || '',
+        avatarUrl: (u.avatarUrl && !u.avatarUrl.startsWith('blob:') ? u.avatarUrl : '') || (existing?.avatarUrl && !existing.avatarUrl.startsWith('blob:') ? existing.avatarUrl : '') || '',
         bio: u.bio || existing?.bio || '',
         skills: u.skills && u.skills.length > 0 ? u.skills : existing?.skills || [],
         projects: u.projects && u.projects.length > 0 ? u.projects : existing?.projects || [],
@@ -203,8 +222,16 @@ const AppContent: React.FC = () => {
     );
   };
 
-  const handleAddSession = (newSession: ScheduleSession) => {
+  const handleAddSession = async (newSession: ScheduleSession) => {
     setSessions((prev) => [newSession, ...prev]);
+    try {
+      const created = await eventService.createEvent(newSession);
+      if (created) {
+        setSessions((prev) => prev.map((s) => (s.id === newSession.id ? created : s)));
+      }
+    } catch (err) {
+      console.warn('Failed to save session to Supabase:', err);
+    }
   };
 
   const handleDeleteSession = async (sessionId: string) => {
@@ -297,7 +324,7 @@ const AppContent: React.FC = () => {
         onClose={() => setRsvpModalOpen(false)}
         targetEvent={selectedEventForRSVP}
         eventsList={events}
-        currentUser={currentUser || CURRENT_USER_PROFILE}
+        currentUser={currentUser}
         isAdmin={isAdmin}
         onSaveTicket={handleSaveTicket}
       />

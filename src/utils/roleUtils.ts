@@ -27,12 +27,10 @@ export const getRoleTier = (userOrMember?: Partial<ClubMember | UserAccount> | n
   if (
     role.includes('super admin') ||
     role.includes('master admin') ||
+    role === 'super_admin' ||
     role === 'master_admin' ||
     tier === 'master_admin' ||
-    tier === 'super_admin' ||
-    email.includes('kashinath') ||
-    email === 'kashinath.r2017@gmail.com' ||
-    username.includes('kashinath')
+    tier === 'super_admin'
   ) {
     return 'SUPER_ADMIN';
   }

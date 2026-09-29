@@ -143,7 +143,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
         </nav>
 
-        {/* Right Actions: Audio Toggle, RSVP PASS button & @zephyrkz0 badge */}
+        {/* Right Actions: Audio Toggle, RSVP PASS button & Profile/User badge */}
         <div className="flex items-center gap-3">
           {/* Audio Speaker Toggle */}
           <button
@@ -182,7 +182,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     : 'bg-zinc-900 border border-zinc-700 text-zinc-200'
                 }`}
               >
-                <span>@{currentUser.username || 'zephyrkz0'}</span>
+                <span>@{currentUser.username || 'member'}</span>
               </button>
 
               {/* User Dropdown */}
@@ -196,7 +196,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     <div className="p-2 space-y-1">
                       <div className="font-bold text-white truncate">{currentUser.fullName || currentUser.username}</div>
-                      <div className="text-[10px] text-amber-400 font-bold">{currentUser.role || 'Super Admin'}</div>
+                      <div className="text-[10px] text-zinc-400 font-bold">{currentUser.roleTitle || currentUser.role || 'Member'}</div>
                     </div>
                     <div className="py-1">
                       <button

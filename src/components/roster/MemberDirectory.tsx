@@ -98,7 +98,7 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
         : existingMember?.role ||
           (targetRole === 'SUPER_ADMIN' ? 'Super Admin' : targetRole === 'ADMIN' ? 'Admin' : 'Core Member');
 
-    const result = updateUserRoleAndPosition(userId, targetRole, targetPosition);
+    const result = await updateUserRoleAndPosition(userId, targetRole, targetPosition);
     setRoleStatusMsg(result.message);
 
     if (result.success) {

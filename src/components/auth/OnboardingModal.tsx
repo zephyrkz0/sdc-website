@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { User, Sparkles, Code2, Globe, Cpu, BrainCircuit, ArrowRight, Upload, X, Trash2 } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { memberService } from '../../services/memberService';
+import { AvatarImage } from '../common/AvatarImage';
 
 export const OnboardingModal: React.FC = () => {
   const { currentUser, updateUserProfile } = useAuth();
@@ -226,20 +227,13 @@ export const OnboardingModal: React.FC = () => {
             </label>
             <div className="flex items-center gap-3 pt-1">
               <div className="w-12 h-12 bg-[#181822] border border-zinc-700 overflow-hidden flex items-center justify-center relative shrink-0">
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="font-syne font-bold text-base text-purple-300 uppercase">
-                    {(firstName?.[0] || username?.[0] || 'U')}
-                  </div>
-                )}
+                <AvatarImage
+                  src={avatarUrl}
+                  alt="Preview"
+                  fallbackText={firstName?.[0] || username?.[0] || 'U'}
+                  className="w-full h-full object-cover"
+                  fallbackClassName="font-syne font-bold text-base text-purple-300 uppercase"
+                />
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
