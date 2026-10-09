@@ -1,17 +1,19 @@
 import React from 'react';
 import { ScheduleSession } from '../../types';
 import { ChromeBadge } from '../common/ChromeBadge';
-import { Calendar, Clock, MapPin, Video, User, CheckCircle2, Laptop, ArrowRight, Sparkles, Download, Trash2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Video, User, CheckCircle2, Laptop, ArrowRight, Sparkles, Download, Trash2, Pencil } from 'lucide-react';
 import { playCyberClick, playHoverBeep } from '../common/AudioEffects';
 
 interface SessionCardProps {
   session: ScheduleSession;
   onRSVP?: (session: ScheduleSession) => void;
   onDelete?: (sessionId: string) => void;
+  onEdit?: (session: ScheduleSession) => void;
+  userHasTicket?: boolean;
   isAdmin?: boolean;
 }
 
-export const SessionCard: React.FC<SessionCardProps> = ({ session, onRSVP, onDelete, isAdmin }) => {
+export const SessionCard: React.FC<SessionCardProps> = ({ session, onRSVP, onDelete, onEdit, userHasTicket = false, isAdmin }) => {
   const getSessionTypeBadge = (type: string) => {
     switch (type) {
       case 'CODE':
@@ -87,6 +89,19 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, onRSVP, onDel
 
         <div className="flex items-center gap-2">
           {getSessionTypeBadge(session.sessionType || 'CODE')}
+          {isAdmin && onEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                playCyberClick();
+                onEdit(session);
+              }}
+              className="p-1.5 border border-zinc-800 bg-zinc-900 hover:border-purple-500 hover:bg-purple-950/40 text-zinc-400 hover:text-purple-300 transition-colors"
+              title="Edit Session (Capacity, Schedule, Details)"
+            >
+              <Pencil size={12} />
+            </button>
+          )}
           {isAdmin && onDelete && (
             <button
               onClick={(e) => {
@@ -209,10 +224,28 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, onRSVP, onDel
               playCyberClick();
               if (onRSVP) onRSVP(session);
             }}
-            className="px-4 py-2.5 bg-zinc-100 hover:bg-white text-black font-mono font-bold text-xs uppercase tracking-wider border border-white hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(255,255,255,0.2)] flex items-center gap-1.5"
+            disabled={!userHasTicket && rsvpCount >= maxCapacity}
+            className={`px-4 py-2.5 font-mono font-bold text-xs uppercase tracking-wider border transition-all flex items-center gap-1.5 ${
+              userHasTicket
+                ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300 hover:bg-emerald-900 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                : rsvpCount >= maxCapacity
+                ? 'bg-zinc-900 border-zinc-800 text-zinc-500 cursor-not-allowed'
+                : 'bg-zinc-100 hover:bg-white text-black border-white hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.2)]'
+            }`}
           >
-            <Sparkles size={12} />
-            <span>RSVP • GET PASS</span>
+            {userHasTicket ? (
+              <>
+                <CheckCircle2 size={12} className="text-emerald-400" />
+                <span>PASS CONFIRMED</span>
+              </>
+            ) : rsvpCount >= maxCapacity ? (
+              <span>AT CAPACITY • FULL</span>
+            ) : (
+              <>
+                <Sparkles size={12} />
+                <span>RSVP • GET PASS</span>
+              </>
+            )}
           </button>
         </div>
       </div>

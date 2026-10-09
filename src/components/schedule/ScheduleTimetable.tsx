@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ScheduleSession } from '../../types';
+import { ScheduleSession, PhysicalTicketPass } from '../../types';
 import { SessionCard } from './SessionCard';
+import { AddSessionModal } from './AddSessionModal';
 import { Search, Plus, Calendar, Shield, Clock } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { useAuth } from '../../context/AuthContext';
@@ -9,30 +10,25 @@ interface ScheduleTimetableProps {
   sessions?: ScheduleSession[];
   onRSVP?: (session: ScheduleSession) => void;
   onAddSession?: (session: ScheduleSession) => void;
+  onUpdateSession?: (session: ScheduleSession) => void;
   onDeleteSession?: (sessionId: string) => void;
+  tickets?: PhysicalTicketPass[];
 }
 
 export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
   sessions = [],
   onRSVP,
   onAddSession,
+  onUpdateSession,
   onDeleteSession,
+  tickets = [],
 }) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'UPCOMING' | 'ARCHIVE'>('UPCOMING');
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [addModalOpen, setAddModalOpen] = useState(false);
-
-  // New session form states
-  const [newTitle, setNewTitle] = useState('');
-  const [newTrack, setNewTrack] = useState('');
-  const [newDate, setNewDate] = useState('');
-  const [newTimeStart, setNewTimeStart] = useState('');
-  const [newTimeEnd, setNewTimeEnd] = useState('');
-  const [newVenue, setNewVenue] = useState('');
-  const [newInstructor, setNewInstructor] = useState('');
-  const [newDescription, setNewDescription] = useState('');
+  const [sessionToEdit, setSessionToEdit] = useState<ScheduleSession | null>(null);
 
   const categories = [
     { id: 'ALL', label: 'All Sessions' },
@@ -58,39 +54,6 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
 
     return matchesSearch && matchesCategory;
   });
-
-  const handleCreateSession = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle || !newDate) return;
-
-    const newSession: ScheduleSession = {
-      id: `ses-${Date.now()}`,
-      title: newTitle,
-      track: newTrack || 'General',
-      date: newDate,
-      timeStart: newTimeStart,
-      timeEnd: newTimeEnd,
-      venue: newVenue,
-      instructorName: newInstructor || 'SDC Lead',
-      description: newDescription,
-      status: 'UPCOMING',
-      sessionType: 'DAILY_SESSION',
-    };
-
-    if (onAddSession) {
-      onAddSession(newSession);
-    }
-    playSuccessChime();
-    setAddModalOpen(false);
-    setNewTitle('');
-    setNewTrack('');
-    setNewDate('');
-    setNewTimeStart('');
-    setNewTimeEnd('');
-    setNewVenue('');
-    setNewInstructor('');
-    setNewDescription('');
-  };
 
   return (
     <div className="space-y-8 animate-fade-in font-mono">
@@ -223,6 +186,7 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
             <button
               onClick={() => {
                 playCyberClick();
+                setSessionToEdit(null);
                 setAddModalOpen(true);
               }}
               className="px-5 py-2.5 bg-white text-black font-bold uppercase text-xs hover:bg-zinc-200 inline-flex items-center gap-1.5"
@@ -234,127 +198,49 @@ export const ScheduleTimetable: React.FC<ScheduleTimetableProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSessions.map((session) => (
-            <SessionCard key={session.id} session={session} onRSVP={onRSVP} onDelete={onDeleteSession} isAdmin={isAdmin} />
-          ))}
+          {filteredSessions.map((session) => {
+            const userHasTicket = Boolean(
+              currentUser?.email &&
+                tickets?.some((t) => {
+                  const matchEmail = (t.attendeeEmail || t.userEmail || '').toLowerCase().trim() === currentUser.email.toLowerCase().trim();
+                  const matchEvent = t.eventId === session.id || t.eventTitle === session.title;
+                  return matchEmail && matchEvent;
+                })
+            );
+
+            return (
+              <SessionCard
+                key={session.id}
+                session={session}
+                onRSVP={onRSVP}
+                onDelete={onDeleteSession}
+                onEdit={(s) => {
+                  setSessionToEdit(s);
+                  setAddModalOpen(true);
+                }}
+                userHasTicket={userHasTicket}
+                isAdmin={isAdmin}
+              />
+            );
+          })}
         </div>
       )}
 
-      {/* Schedule Live Session Modal */}
-      {addModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="max-w-md w-full bg-[#0d0d14] border border-zinc-700 p-6 space-y-4 shadow-2xl font-mono text-xs">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="font-bold text-white uppercase">SCHEDULE WORKSHOP / SESSION</span>
-              <button onClick={() => setAddModalOpen(false)} className="text-zinc-400 hover:text-white">
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateSession} className="space-y-3">
-              <div>
-                <label className="block text-zinc-400 mb-1 text-[10px]">SESSION TITLE</label>
-                <input
-                  type="text"
-                  required
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-400 mb-1 text-[10px]">DATE</label>
-                  <input
-                    type="date"
-                    required
-                    value={newDate}
-                    onChange={(e) => setNewDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-400 mb-1 text-[10px]">TRACK</label>
-                  <input
-                    type="text"
-                    value={newTrack}
-                    onChange={(e) => setNewTrack(e.target.value)}
-                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-400 mb-1 text-[10px]">START TIME</label>
-                  <input
-                    type="time"
-                    value={newTimeStart}
-                    onChange={(e) => setNewTimeStart(e.target.value)}
-                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-400 mb-1 text-[10px]">END TIME</label>
-                  <input
-                    type="time"
-                    value={newTimeEnd}
-                    onChange={(e) => setNewTimeEnd(e.target.value)}
-                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-zinc-400 mb-1 text-[10px]">VENUE</label>
-                <input
-                  type="text"
-                  value={newVenue}
-                  onChange={(e) => setNewVenue(e.target.value)}
-                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-zinc-400 mb-1 text-[10px]">INSTRUCTOR / LEAD</label>
-                <input
-                  type="text"
-                  value={newInstructor}
-                  onChange={(e) => setNewInstructor(e.target.value)}
-                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-zinc-400 mb-1 text-[10px]">DESCRIPTION</label>
-                <textarea
-                  rows={2}
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setAddModalOpen(false)}
-                  className="px-4 py-2 bg-zinc-900 text-zinc-300 border border-zinc-800"
-                >
-                  CANCEL
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-white text-black font-bold uppercase hover:bg-zinc-200"
-                >
-                  PUBLISH SESSION
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Schedule Live Session Modal / Edit Modal */}
+      <AddSessionModal
+        isOpen={addModalOpen}
+        onClose={() => {
+          setAddModalOpen(false);
+          setSessionToEdit(null);
+        }}
+        onAddSession={(newSession) => {
+          if (onAddSession) onAddSession(newSession);
+        }}
+        onUpdateSession={(updatedSession) => {
+          if (onUpdateSession) onUpdateSession(updatedSession);
+        }}
+        sessionToEdit={sessionToEdit}
+      />
     </div>
   );
 };
