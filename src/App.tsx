@@ -234,6 +234,18 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleUpdateSession = async (updatedSession: ScheduleSession) => {
+    setSessions((prev) => prev.map((s) => (s.id === updatedSession.id ? updatedSession : s)));
+    try {
+      const updated = await eventService.updateEvent(updatedSession.id, updatedSession);
+      if (updated) {
+        setSessions((prev) => prev.map((s) => (s.id === updatedSession.id ? updated : s)));
+      }
+    } catch (err) {
+      console.warn('Failed to update session in Supabase:', err);
+    }
+  };
+
   const handleDeleteSession = async (sessionId: string) => {
     setSessions((prev) => prev.filter((s) => s.id !== sessionId));
     await eventService.deleteEvent(sessionId);
@@ -291,8 +303,10 @@ const AppContent: React.FC = () => {
           {activeTab === 'schedule' && (
             <ScheduleTimetable
               sessions={sessions}
+              tickets={tickets}
               onRSVP={handleOpenRSVP}
               onAddSession={handleAddSession}
+              onUpdateSession={handleUpdateSession}
               onDeleteSession={handleDeleteSession}
             />
           )}
@@ -326,6 +340,7 @@ const AppContent: React.FC = () => {
         eventsList={events}
         currentUser={currentUser}
         isAdmin={isAdmin}
+        existingTickets={tickets}
         onSaveTicket={handleSaveTicket}
       />
 

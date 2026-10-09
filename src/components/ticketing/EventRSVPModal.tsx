@@ -15,6 +15,7 @@ interface EventRSVPModalProps {
   currentUser?: ClubMember | null;
   isAdmin?: boolean;
   onSaveTicket: (pass: PhysicalTicketPass) => void;
+  existingTickets?: PhysicalTicketPass[];
 }
 
 export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
@@ -25,6 +26,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
   currentUser,
   isAdmin = false,
   onSaveTicket,
+  existingTickets = [],
 }) => {
   const [selectedEventId, setSelectedEventId] = useState<string>(
     targetEvent?.id || eventsList[0]?.id || ''
@@ -36,6 +38,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
   const [track, setTrack] = useState<string>(currentUser?.track || 'Web Development');
   const [generatedPass, setGeneratedPass] = useState<PhysicalTicketPass | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   React.useEffect(() => {
     if (isOpen) {
@@ -43,8 +46,10 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
       setAttendeeCallsign(currentUser?.callsign || currentUser?.username || '');
       setAttendeeEmail(currentUser?.email || '');
       if (currentUser?.track) setTrack(currentUser.track);
+      if (targetEvent?.id) setSelectedEventId(targetEvent.id);
+      setErrorMsg('');
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen, currentUser, targetEvent]);
 
   if (!isOpen) return null;
 
@@ -54,6 +59,24 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
     eventsList.find((e) => e.id === selectedEventId) ||
     (targetEvent && 'venueCoords' in targetEvent ? targetEvent : null) ||
     eventsList[0];
+
+  const userExistingPass = React.useMemo(() => {
+    const userMail = (attendeeEmail || currentUser?.email || '').toLowerCase().trim();
+    if (!userMail) return null;
+    return (
+      existingTickets.find((t) => {
+        const matchEmail = (t.attendeeEmail || t.userEmail || '').toLowerCase().trim() === userMail;
+        const matchEvent =
+          (t.eventId && (t.eventId === selectedEventId || (targetEvent && t.eventId === targetEvent.id))) ||
+          (t.eventTitle && (t.eventTitle === currentEvent?.title || (targetEvent && t.eventTitle === targetEvent.title)));
+        return matchEmail && matchEvent;
+      }) || null
+    );
+  }, [existingTickets, attendeeEmail, currentUser, selectedEventId, currentEvent, targetEvent]);
+
+  const eventMaxCap = currentEvent ? Number((currentEvent as any).maxCapacity || (currentEvent as any).capacity || 0) : 0;
+  const eventRsvpCount = currentEvent ? Number(currentEvent.rsvpCount || 0) : 0;
+  const isAtCapacity = Boolean(eventMaxCap > 0 && eventRsvpCount >= eventMaxCap);
 
   // Seat tier options filtered by role — non-admins only see MEMBER & ATTENDEE
   const seatTierOptions = isAdmin
@@ -71,6 +94,17 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
   const handleGenerateTicket = (e: React.FormEvent) => {
     e.preventDefault();
     playCyberClick();
+    setErrorMsg('');
+
+    if (userExistingPass) {
+      setErrorMsg('You already have a confirmed pass for this session. Limit: 1 pass per member.');
+      return;
+    }
+
+    if (isAtCapacity) {
+      setErrorMsg('This session has reached maximum capacity.');
+      return;
+    }
 
     const ticketSerial = `SDC-PASS-${Math.floor(1000 + Math.random() * 9000)}-X${Math.floor(1 + Math.random() * 9)}`;
     const barcode = `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`;
@@ -282,6 +316,44 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
                 </div>
               </div>
 
+              {/* Existing Pass Alert Banner */}
+              {userExistingPass && (
+                <div className="p-4 bg-emerald-950/60 border border-emerald-500/80 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase">
+                    <CheckCircle2 size={16} />
+                    <span>Active Pass Already Confirmed</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-300 leading-relaxed">
+                    Each attendee (including administrators) is limited to 1 pass per session. You are already registered with pass #{userExistingPass.ticketId}.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playCyberClick();
+                      setGeneratedPass(userExistingPass);
+                    }}
+                    className="mt-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold uppercase text-[11px] flex items-center gap-1.5 transition-colors"
+                  >
+                    <Ticket size={13} />
+                    <span>View & Download My Pass</span>
+                  </button>
+                </div>
+              )}
+
+              {/* At Capacity Alert */}
+              {!userExistingPass && isAtCapacity && (
+                <div className="p-3 bg-red-950/60 border border-red-500/80 text-red-200 text-xs flex items-center gap-2">
+                  <X size={15} className="text-red-400 shrink-0" />
+                  <span>This session has reached full attendee capacity ({currentEvent?.rsvpCount} / {(currentEvent as any)?.maxCapacity}). RSVPs are currently closed.</span>
+                </div>
+              )}
+
+              {errorMsg && (
+                <div className="p-2.5 bg-red-950/80 border border-red-800 text-[11px] text-red-200">
+                  {errorMsg}
+                </div>
+              )}
+
               {/* Submit CTA */}
               <div className="pt-4 border-t border-zinc-800 flex justify-end gap-3">
                 <button
@@ -293,10 +365,21 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-white text-black font-bold uppercase tracking-wider hover:bg-zinc-200 transition-all flex items-center gap-2"
+                  disabled={Boolean(userExistingPass) || isAtCapacity}
+                  className={`px-6 py-2.5 font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+                    userExistingPass || isAtCapacity
+                      ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
+                      : 'bg-white text-black hover:bg-zinc-200 shadow-md'
+                  }`}
                 >
                   <Sparkles size={14} />
-                  <span>GENERATE PASS</span>
+                  <span>
+                    {userExistingPass
+                      ? 'PASS ALREADY RESERVED'
+                      : isAtCapacity
+                      ? 'SESSION FULL'
+                      : 'GENERATE PASS'}
+                  </span>
                 </button>
               </div>
             </form>

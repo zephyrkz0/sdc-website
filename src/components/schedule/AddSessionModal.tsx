@@ -8,14 +8,19 @@ import { eventService } from '../../services/eventService';
 interface AddSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddSession: (newSession: ScheduleSession) => void;
+  onAddSession?: (newSession: ScheduleSession) => void;
+  onUpdateSession?: (updatedSession: ScheduleSession) => void;
+  sessionToEdit?: ScheduleSession | null;
 }
 
 export const AddSessionModal: React.FC<AddSessionModalProps> = ({
   isOpen,
   onClose,
   onAddSession,
+  onUpdateSession,
+  sessionToEdit,
 }) => {
+  const isEditing = Boolean(sessionToEdit);
   const [title, setTitle] = useState('');
   const [code, setCode] = useState('');
   const [sessionType, setSessionType] = useState<SessionType>('WORKSHOP');
@@ -27,7 +32,7 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
   const [location, setLocation] = useState('');
   const [roomNumber, setRoomNumber] = useState('');
   const [virtualStreamUrl, setVirtualStreamUrl] = useState('');
-  const [maxCapacity, setMaxCapacity] = useState<number | string>('');
+  const [maxCapacity, setMaxCapacity] = useState<number | string>(50);
   const [instructorName, setInstructorName] = useState('');
   const [instructorUsername, setInstructorUsername] = useState('');
   const [instructorAvatar, setInstructorAvatar] = useState('');
@@ -37,6 +42,52 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
   const [hardwareReqs, setHardwareReqs] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (sessionToEdit) {
+      setTitle(sessionToEdit.title || '');
+      setCode(sessionToEdit.code || '');
+      setSessionType((sessionToEdit.sessionType as SessionType) || 'WORKSHOP');
+      setTrack(sessionToEdit.track || '');
+      setDay(sessionToEdit.day || '');
+      setDate(sessionToEdit.date || '');
+      setTimeStart(sessionToEdit.timeStart || '');
+      setTimeEnd(sessionToEdit.timeEnd || '');
+      setLocation(sessionToEdit.location || (sessionToEdit as any).venue || '');
+      setRoomNumber(sessionToEdit.roomNumber || '');
+      setVirtualStreamUrl(sessionToEdit.virtualStreamUrl || '');
+      setMaxCapacity(sessionToEdit.maxCapacity ?? 50);
+      setInstructorName(sessionToEdit.instructor?.name || (sessionToEdit as any).instructorName || '');
+      setInstructorUsername(sessionToEdit.instructor?.username || '');
+      setInstructorAvatar(sessionToEdit.instructor?.avatar || '');
+      setCurriculum(Array.isArray(sessionToEdit.curriculum) ? sessionToEdit.curriculum.join(', ') : '');
+      setDescription(sessionToEdit.description || '');
+      setPrerequisites(Array.isArray(sessionToEdit.prerequisites) ? sessionToEdit.prerequisites.join(', ') : '');
+      setHardwareReqs((sessionToEdit as any).hardwareRequirements || '');
+      setErrorMsg('');
+    } else {
+      setTitle('');
+      setCode('');
+      setSessionType('WORKSHOP');
+      setTrack('');
+      setDay('');
+      setDate('');
+      setTimeStart('');
+      setTimeEnd('');
+      setLocation('');
+      setRoomNumber('');
+      setVirtualStreamUrl('');
+      setMaxCapacity(50);
+      setInstructorName('');
+      setInstructorUsername('');
+      setInstructorAvatar('');
+      setCurriculum('');
+      setDescription('');
+      setPrerequisites('');
+      setHardwareReqs('');
+      setErrorMsg('');
+    }
+  }, [isOpen, sessionToEdit]);
 
   useEffect(() => {
     if (isOpen) {
@@ -65,43 +116,83 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
 
     setIsSubmitting(true);
 
-    const newSessionData: Omit<ScheduleSession, 'id'> = {
-      title: title.trim(),
-      code: code.trim().toUpperCase(),
-      sessionType,
-      track,
-      day: day.trim().toUpperCase(),
-      date,
-      timeStart,
-      timeEnd,
-      location: location.trim(),
-      roomNumber: roomNumber.trim(),
-      virtualStreamUrl: virtualStreamUrl.trim() || undefined,
-      maxCapacity: Number(maxCapacity) || 50,
-      rsvpCount: 0,
-      curriculum: curriculum.split(',').map((c) => c.trim()).filter(Boolean),
-      description: description.trim() || 'Hands-on practical workshop hosted by Skill Development Club.',
-      prerequisites: prerequisites.split(',').map((p) => p.trim()).filter(Boolean),
-      hardwareRequirements: hardwareReqs.trim(),
-      instructor: {
-        name: instructorName.trim(),
-        username: (instructorUsername || instructorName).trim().toLowerCase().replace(/[^a-z0-9_]/g, ''),
-        avatar: instructorAvatar.trim() || '',
-        role: 'Session Lead',
-        callsign: (instructorUsername || instructorName).trim(),
-        opId: `SDC-INST-${Date.now().toString().slice(-4)}`,
-      },
-    };
+    if (isEditing && sessionToEdit) {
+      const updatedData: Partial<ScheduleSession> = {
+        title: title.trim(),
+        code: code.trim().toUpperCase(),
+        sessionType,
+        track,
+        day: day.trim().toUpperCase(),
+        date,
+        timeStart,
+        timeEnd,
+        location: location.trim(),
+        roomNumber: roomNumber.trim(),
+        virtualStreamUrl: virtualStreamUrl.trim() || undefined,
+        maxCapacity: Number(maxCapacity) || 50,
+        curriculum: curriculum.split(',').map((c) => c.trim()).filter(Boolean),
+        description: description.trim() || 'Hands-on practical workshop hosted by Skill Development Club.',
+        prerequisites: prerequisites.split(',').map((p) => p.trim()).filter(Boolean),
+        hardwareRequirements: hardwareReqs.trim(),
+        instructor: {
+          name: instructorName.trim(),
+          username: (instructorUsername || instructorName).trim().toLowerCase().replace(/[^a-z0-9_]/g, ''),
+          avatar: instructorAvatar.trim() || sessionToEdit.instructor?.avatar || '',
+          role: 'Session Lead',
+          callsign: (instructorUsername || instructorName).trim(),
+          opId: sessionToEdit.instructor?.opId || `SDC-INST-${Date.now().toString().slice(-4)}`,
+        },
+      };
 
-    const saved = await eventService.createEvent(newSessionData);
-    setIsSubmitting(false);
+      const saved = await eventService.updateEvent(sessionToEdit.id, updatedData);
+      setIsSubmitting(false);
 
-    if (saved) {
-      onAddSession(saved);
-      playSuccessChime();
-      onClose();
+      if (saved) {
+        if (onUpdateSession) onUpdateSession(saved);
+        playSuccessChime();
+        onClose();
+      } else {
+        setErrorMsg('Failed to update session. Please check your connection and try again.');
+      }
     } else {
-      setErrorMsg('Failed to save session. Please check your connection and try again.');
+      const newSessionData: Omit<ScheduleSession, 'id'> = {
+        title: title.trim(),
+        code: code.trim().toUpperCase(),
+        sessionType,
+        track,
+        day: day.trim().toUpperCase(),
+        date,
+        timeStart,
+        timeEnd,
+        location: location.trim(),
+        roomNumber: roomNumber.trim(),
+        virtualStreamUrl: virtualStreamUrl.trim() || undefined,
+        maxCapacity: Number(maxCapacity) || 50,
+        rsvpCount: 0,
+        curriculum: curriculum.split(',').map((c) => c.trim()).filter(Boolean),
+        description: description.trim() || 'Hands-on practical workshop hosted by Skill Development Club.',
+        prerequisites: prerequisites.split(',').map((p) => p.trim()).filter(Boolean),
+        hardwareRequirements: hardwareReqs.trim(),
+        instructor: {
+          name: instructorName.trim(),
+          username: (instructorUsername || instructorName).trim().toLowerCase().replace(/[^a-z0-9_]/g, ''),
+          avatar: instructorAvatar.trim() || '',
+          role: 'Session Lead',
+          callsign: (instructorUsername || instructorName).trim(),
+          opId: `SDC-INST-${Date.now().toString().slice(-4)}`,
+        },
+      };
+
+      const saved = await eventService.createEvent(newSessionData);
+      setIsSubmitting(false);
+
+      if (saved) {
+        if (onAddSession) onAddSession(saved);
+        playSuccessChime();
+        onClose();
+      } else {
+        setErrorMsg('Failed to save session. Please check your connection and try again.');
+      }
     }
   };
 
@@ -170,10 +261,10 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider font-mono">
-                SCHEDULE NEW WORKSHOP / SESSION
+                {isEditing ? `EDIT SESSION • ${code || title}` : 'SCHEDULE NEW WORKSHOP / SESSION'}
               </h3>
               <p className="text-[10px] text-zinc-400">
-                Publish an upcoming hands-on workshop, coding session, or guest talk.
+                {isEditing ? 'Modify session parameters, adjust seat capacity, update speakers or timetable coordinates.' : 'Publish an upcoming hands-on workshop, coding session, or guest talk.'}
               </p>
             </div>
           </div>
@@ -347,14 +438,38 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
           {/* Capacity & Description */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] text-zinc-400 uppercase font-bold">SEAT CAPACITY</label>
-              <input
-                type="number"
-                min="1"
-                value={maxCapacity}
-                onChange={(e) => setMaxCapacity(e.target.value)}
-                className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-purple-400"
-              />
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] text-zinc-400 uppercase font-bold">SEAT CAPACITY *</label>
+                <span className="text-[9px] text-purple-400 font-mono">Max RSVPs</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={maxCapacity}
+                  onChange={(e) => setMaxCapacity(e.target.value)}
+                  className="w-full bg-[#121218] border border-zinc-800 px-3 py-2 text-white font-bold focus:outline-none focus:border-purple-400"
+                  placeholder="50"
+                />
+                <div className="flex items-center gap-1 shrink-0">
+                  {[25, 50, 100, 200].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setMaxCapacity(num)}
+                      className={`px-2 py-1 text-[9px] border font-mono transition-colors ${
+                        Number(maxCapacity) === num
+                          ? 'bg-purple-900/60 border-purple-500 text-purple-200 font-bold'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                      }`}
+                      title={`Set capacity to ${num} attendees`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="sm:col-span-2 space-y-1">
               <label className="text-[10px] text-zinc-400 uppercase font-bold">SESSION OVERVIEW / DESCRIPTION</label>
@@ -413,7 +528,7 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
               className="px-6 py-2 bg-white text-black font-bold text-xs uppercase tracking-wider border border-white hover:bg-zinc-200 transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.2)]"
             >
               <Sparkles size={14} />
-              <span>{isSubmitting ? 'CREATING SESSION...' : 'SCHEDULE WORKSHOP'}</span>
+              <span>{isSubmitting ? (isEditing ? 'SAVING CHANGES...' : 'CREATING SESSION...') : (isEditing ? 'SAVE CHANGES' : 'SCHEDULE WORKSHOP')}</span>
             </button>
           </div>
         </form>
