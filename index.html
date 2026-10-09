@@ -16,21 +16,61 @@
     <script>
       (function() {
         try {
-          if (window.opener && window.name === 'sdc_oauth_popup') {
-            var hash = window.location.hash || '';
-            var search = window.location.search || '';
-            if (hash.includes('access_token') || search.includes('code=') || hash.includes('error')) {
-              window.opener.postMessage({
-                type: 'SDC_OAUTH_SUCCESS',
-                hash: hash,
-                search: search
-              }, window.location.origin);
-              document.title = 'Sign-in Complete';
-              document.body.innerHTML = '<div style="background:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;font-size:13px;"><div style="font-weight:600;margin-bottom:4px;">Signed in successfully</div><div style="color:#a1a1aa;font-size:12px;">Closing window...</div></div>';
-              setTimeout(function() {
-                window.close();
-              }, 250);
+          var hash = window.location.hash || '';
+          var search = window.location.search || '';
+          var hasAuthParams = hash.includes('access_token') || search.includes('code=') || hash.includes('error');
+          var isRedirect = sessionStorage.getItem('sdc_oauth_redirecting') === 'true';
+          var isPopup = Boolean(
+            !isRedirect && (
+              window.opener || 
+              window.name === 'sdc_oauth_popup' || 
+              (window.innerWidth > 0 && window.innerWidth < 850 && window.innerHeight < 850)
+            )
+          );
+
+          if (hasAuthParams && isPopup) {
+            var payload = {
+              type: 'SDC_OAUTH_SUCCESS',
+              hash: hash,
+              search: search
+            };
+
+            // 1. PostMessage to opener if present
+            if (window.opener) {
+              try {
+                window.opener.postMessage(payload, window.location.origin);
+              } catch (e) {}
             }
+
+            // 2. BroadcastChannel across windows/tabs
+            try {
+              if (typeof BroadcastChannel !== 'undefined') {
+                var bc = new BroadcastChannel('sdc_oauth_channel');
+                bc.postMessage(payload);
+                bc.close();
+              }
+            } catch (e) {}
+
+            // 3. LocalStorage event as reliable cross-tab fallback
+            try {
+              localStorage.setItem('sdc_oauth_exchange', JSON.stringify({
+                payload: payload,
+                ts: Date.now()
+              }));
+            } catch (e) {}
+
+            // Prevent React from mounting in the popup window
+            var rootEl = document.getElementById('root');
+            if (rootEl) {
+              rootEl.remove();
+            }
+
+            document.title = 'Sign-in Complete — SDC';
+            document.body.innerHTML = '<div style="background:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;font-size:13px;text-align:center;padding:20px;"><div style="font-weight:600;margin-bottom:6px;color:#a855f7;font-size:15px;">✦ Authenticated Successfully</div><div style="color:#a1a1aa;font-size:12px;margin-bottom:14px;">Closing window...</div><button onclick="window.close()" style="background:#18181b;color:#e4e4e7;border:1px solid #3f3f46;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;">Close Window</button></div>';
+
+            setTimeout(function() {
+              window.close();
+            }, 100);
           }
         } catch (e) {}
       })();
