@@ -724,55 +724,104 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return new Promise((resolve) => {
               let resolved = false;
 
+              const closePopupSafely = () => {
+                try {
+                  if (popup && !popup.closed) {
+                    popup.close();
+                  }
+                } catch (e) {}
+              };
+
+              let bc: BroadcastChannel | null = null;
+
               const cleanup = () => {
                 window.removeEventListener('message', handleMessage);
+                window.removeEventListener('storage', handleStorage);
+                if (bc) {
+                  try {
+                    bc.close();
+                  } catch (e) {}
+                  bc = null;
+                }
                 if (pollTimer) clearInterval(pollTimer);
+                closePopupSafely();
+              };
+
+              const processOAuthResult = async (resultData: { hash?: string; search?: string }) => {
+                if (resolved) return;
+                resolved = true;
+                closePopupSafely();
+
+                options?.onStatusChange?.('VERIFYING_SESSION');
+
+                const hash = resultData.hash || '';
+                const search = resultData.search || '';
+
+                if (hash.includes('access_token')) {
+                  try {
+                    const params = new URLSearchParams(hash.replace(/^#/, ''));
+                    const access_token = params.get('access_token');
+                    const refresh_token = params.get('refresh_token');
+                    if (access_token && refresh_token) {
+                      await supabase.auth.setSession({ access_token, refresh_token });
+                    }
+                  } catch (e) {}
+                } else if (search.includes('code=')) {
+                  try {
+                    const code = new URLSearchParams(search).get('code');
+                    if (code) {
+                      await supabase.auth.exchangeCodeForSession(code);
+                    }
+                  } catch (e) {}
+                }
+
+                try {
+                  const { data: sessionData } = await supabase.auth.getSession();
+                  if (sessionData?.session?.user) {
+                    await syncMemberProfileFromSupabase(sessionData.session.user);
+                    options?.onStatusChange?.('SUCCESS');
+                    cleanup();
+                    resolve({ success: true });
+                    return;
+                  }
+                } catch (e) {}
+
+                options?.onStatusChange?.('SUCCESS');
+                cleanup();
+                resolve({ success: true });
               };
 
               const handleMessage = async (event: MessageEvent) => {
                 if (event.origin !== window.location.origin) return;
                 if (event.data?.type === 'SDC_OAUTH_SUCCESS') {
-                  if (resolved) return;
-                  resolved = true;
-                  cleanup();
+                  await processOAuthResult(event.data);
+                }
+              };
 
-                  options?.onStatusChange?.('VERIFYING_SESSION');
-
-                  const hash = event.data.hash || '';
-                  if (hash.includes('access_token')) {
-                    try {
-                      const params = new URLSearchParams(hash.replace(/^#/, ''));
-                      const access_token = params.get('access_token');
-                      const refresh_token = params.get('refresh_token');
-                      if (access_token && refresh_token) {
-                        await supabase.auth.setSession({ access_token, refresh_token });
-                      }
-                    } catch (e) {}
-                  } else if (event.data.search?.includes('code=')) {
-                    try {
-                      const code = new URLSearchParams(event.data.search).get('code');
-                      if (code) {
-                        await supabase.auth.exchangeCodeForSession(code);
-                      }
-                    } catch (e) {}
-                  }
-
+              const handleStorage = async (event: StorageEvent) => {
+                if (event.key === 'sdc_oauth_exchange' && event.newValue) {
                   try {
-                    const { data: sessionData } = await supabase.auth.getSession();
-                    if (sessionData?.session?.user) {
-                      await syncMemberProfileFromSupabase(sessionData.session.user);
-                      options?.onStatusChange?.('SUCCESS');
-                      resolve({ success: true });
-                      return;
+                    const parsed = JSON.parse(event.newValue);
+                    if (parsed?.payload?.type === 'SDC_OAUTH_SUCCESS') {
+                      await processOAuthResult(parsed.payload);
                     }
                   } catch (e) {}
-
-                  options?.onStatusChange?.('SUCCESS');
-                  resolve({ success: true });
                 }
               };
 
               window.addEventListener('message', handleMessage);
+              window.addEventListener('storage', handleStorage);
+
+              try {
+                if (typeof BroadcastChannel !== 'undefined') {
+                  bc = new BroadcastChannel('sdc_oauth_channel');
+                  bc.onmessage = async (event) => {
+                    if (event.data?.type === 'SDC_OAUTH_SUCCESS') {
+                      await processOAuthResult(event.data);
+                    }
+                  };
+                }
+              } catch (e) {}
 
               const pollTimer = setInterval(async () => {
                 if (popup?.closed) {
