@@ -1,4 +1,4 @@
-// Subtle Cybernetic Audio Feedback Synthesizer using Web Audio API
+// Audio feedback synthesizer using Web Audio API
 
 let audioCtx: AudioContext | null = null;
 let soundEnabled = true;

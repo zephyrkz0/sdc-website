@@ -112,13 +112,35 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         scale: 3,
         backgroundColor: '#000000',
         useCORS: true,
+        allowTaint: false,
+        logging: false,
       });
       const link = document.createElement('a');
       link.href = canvas.toDataURL('image/png');
       link.download = `SDC_ID_${activeUser.username || 'CARD'}.png`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     } catch (err) {
-      console.error(err);
+      console.error('ID card export notice:', err);
+      // Fallback export with taint allowed
+      try {
+        const fallbackCanvas = await html2canvas(node, {
+          scale: 2,
+          backgroundColor: '#000000',
+          useCORS: false,
+          allowTaint: true,
+          logging: false,
+        });
+        const link = document.createElement('a');
+        link.href = fallbackCanvas.toDataURL('image/png');
+        link.download = `SDC_ID_${activeUser.username || 'CARD'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (fallbackErr) {
+        console.error('Fallback export also failed:', fallbackErr);
+      }
     }
   };
 
@@ -132,6 +154,23 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       const uploadedUrl = await memberService.uploadAvatar(file);
       if (uploadedUrl) {
         setAvatarUrl(uploadedUrl);
+        // Auto-persist immediately so user doesn't lose it if they navigate away (I2)
+        if (currentUser) {
+          updateUserProfile({ avatarUrl: uploadedUrl });
+          try {
+            await memberService.createOrUpdateMember({
+              userId: currentUser.id,
+              username: currentUser.username,
+              email: currentUser.email,
+              avatarUrl: uploadedUrl,
+            });
+          } catch (syncErr) {
+            console.warn('Avatar background sync note:', syncErr);
+          }
+        }
+        if (onUpdateProfile) {
+          onUpdateProfile({ ...activeUser, avatarUrl: uploadedUrl });
+        }
         playSuccessChime();
       }
     } catch (err) {

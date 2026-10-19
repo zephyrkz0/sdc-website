@@ -48,8 +48,16 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
       if (currentUser?.track) setTrack(currentUser.track);
       if (targetEvent?.id) setSelectedEventId(targetEvent.id);
       setErrorMsg('');
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
     }
-  }, [isOpen, currentUser, targetEvent]);
+  }, [isOpen, currentUser, targetEvent, onClose]);
 
   if (!isOpen) return null;
 
@@ -61,7 +69,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
     eventsList[0];
 
   const userExistingPass = React.useMemo(() => {
-    const userMail = (attendeeEmail || currentUser?.email || '').toLowerCase().trim();
+    const userMail = (currentUser?.email || attendeeEmail || '').toLowerCase().trim();
     if (!userMail) return null;
     return (
       existingTickets.find((t) => {
@@ -106,6 +114,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
       return;
     }
 
+    const effectiveEmail = (currentUser?.email || attendeeEmail).toLowerCase().trim();
     const ticketSerial = `SDC-PASS-${Math.floor(1000 + Math.random() * 9000)}-X${Math.floor(1 + Math.random() * 9)}`;
     const barcode = `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`;
     const secCode = `AUTH-${Math.random().toString(36).substring(2, 7).toUpperCase()}-SEC`;
@@ -119,7 +128,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
       eventLocation: currentEvent?.location || (targetEvent ? (targetEvent as any).location || (targetEvent as any).venue : 'CUCEK Computer Lab') || 'CUCEK Computer Lab',
       attendeeName: attendeeName || currentUser?.fullName || 'Member',
       attendeeCallsign: attendeeCallsign || currentUser?.callsign || currentUser?.username || 'member',
-      attendeeEmail,
+      attendeeEmail: effectiveEmail,
       attendeeRole: currentUser?.roleTitle || currentUser?.role || 'Member',
       attendeeTrack: track,
       seatTier,
@@ -187,6 +196,9 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
 
         {/* Modal Window */}
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rsvp-modal-title"
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -196,7 +208,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
           <div className="flex items-center justify-between pb-4 border-b border-zinc-800 text-xs text-zinc-400">
             <div className="flex items-center gap-2">
               <Ticket size={16} className="text-purple-400" />
-              <span className="font-bold text-white uppercase tracking-wider">EVENT RSVP & PASS REGISTRATION</span>
+              <span id="rsvp-modal-title" className="font-bold text-white uppercase tracking-wider">EVENT RSVP & PASS REGISTRATION</span>
             </div>
             <button
               onClick={() => {
@@ -296,13 +308,20 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-zinc-400 mb-1">CONFIRMATION EMAIL</label>
+                  <label className="block text-zinc-400 mb-1">
+                    CONFIRMATION EMAIL {currentUser?.email && <span className="text-[10px] text-zinc-500">(ACCOUNT)</span>}
+                  </label>
                   <input
                     type="email"
                     required
-                    value={attendeeEmail}
+                    readOnly={Boolean(currentUser?.email)}
+                    value={currentUser?.email || attendeeEmail}
                     onChange={(e) => setAttendeeEmail(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-800 p-2 text-white focus:outline-none focus:border-zinc-500"
+                    className={`w-full p-2 font-mono text-xs focus:outline-none ${
+                      currentUser?.email
+                        ? 'bg-zinc-900/60 border border-zinc-700/60 text-zinc-400 cursor-not-allowed'
+                        : 'bg-zinc-900 border border-zinc-800 text-white focus:border-zinc-500'
+                    }`}
                   />
                 </div>
                 <div>

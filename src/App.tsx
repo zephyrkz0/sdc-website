@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { NavTab, Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { GlobalDashboard } from './components/dashboard/GlobalDashboard';
@@ -14,6 +14,7 @@ import { OnboardingModal } from './components/auth/OnboardingModal';
 import { EmailVerificationModal } from './components/auth/EmailVerificationModal';
 import { GlobalLoadingScreen } from './components/common/GlobalLoadingScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { isSupabaseConfigured } from './lib/supabase';
 import { memberService } from './services/memberService';
 import { eventService } from './services/eventService';
 import { ticketService } from './services/ticketService';
@@ -33,7 +34,42 @@ import { Aurora } from './components/common/Aurora';
 const AppContent: React.FC = () => {
   const { currentUser, allUsers, isAdmin } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+  const getInitialTab = (): NavTab => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash.replace(/^#/, '').toLowerCase();
+      const validTabs: NavTab[] = ['dashboard', 'roster', 'schedule', 'profile', 'tickets', 'gallery'];
+      if (validTabs.includes(hash as NavTab)) {
+        return hash as NavTab;
+      }
+    }
+    return 'dashboard';
+  };
+
+  const [activeTab, setActiveTabState] = useState<NavTab>(getInitialTab);
+
+  const setActiveTab = useCallback((tab: NavTab) => {
+    setActiveTabState(tab);
+    if (typeof window !== 'undefined') {
+      if (window.location.hash !== `#${tab}`) {
+        window.history.pushState({ tab }, '', `#${tab}`);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const tab = getInitialTab();
+      setActiveTabState(tab);
+    };
+
+    window.addEventListener('popstate', handleHashChange);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('popstate', handleHashChange);
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+
   const [members, setMembers] = useState<ClubMember[]>([]);
   const [sessions, setSessions] = useState<ScheduleSession[]>(SCHEDULE_SESSIONS);
   const [events, setEvents] = useState<ClubEvent[]>(CLUB_EVENTS);
@@ -84,36 +120,35 @@ const AppContent: React.FC = () => {
         if (liveTickets && liveTickets.length > 0) {
           setTickets(liveTickets);
         }
-
-        // Auto-sync currentUser profile to Supabase members table
-        try {
-          await memberService.createOrUpdateMember({
-            id: currentUser.id,
-            userId: currentUser.userId || currentUser.id,
-            username: currentUser.username,
-            firstName: currentUser.firstName,
-            lastName: currentUser.lastName,
-            fullName: currentUser.fullName,
-            email: currentUser.email,
-            role: currentUser.roleTitle || currentUser.role || 'Member',
-            track: currentUser.track || 'Web Development',
-            branch: currentUser.branch || '',
-            semester: currentUser.semester || '',
-            bio: currentUser.bio || '',
-            skills: currentUser.skills || [],
-            avatarUrl: currentUser.avatarUrl || '',
-          });
-        } catch (syncErr) {
-          console.warn('Auto-sync currentUser to Supabase notice:', syncErr);
-        }
       }
     };
 
     loadData();
   }, [currentUser]);
 
-  // Combine database members with local registered users with multi-field deduplication
+  // Combine database members with current session/local state
   const combinedMembers = useMemo(() => {
+    // If connected to Supabase and live members exist, the database is the primary source of truth
+    if (isSupabaseConfigured() && members.length > 0) {
+      const list = [...members];
+      // Ensure active currentUser profile changes are immediately visible
+      if (currentUser) {
+        const idx = list.findIndex(
+          (m) =>
+            m.id === currentUser.id ||
+            (currentUser.email && m.email?.toLowerCase() === currentUser.email.toLowerCase())
+        );
+        if (idx >= 0) {
+          list[idx] = {
+            ...list[idx],
+            ...currentUser,
+            role: currentUser.roleTitle || list[idx].role,
+          };
+        }
+      }
+      return list;
+    }
+
     const memberList: ClubMember[] = [];
 
     const findExisting = (item: { email?: string; username?: string; fullName?: string; id?: string }) => {
@@ -178,7 +213,7 @@ const AppContent: React.FC = () => {
     });
 
     return memberList;
-  }, [members, allUsers]);
+  }, [members, allUsers, currentUser]);
 
   const hasEvents = events.length > 0 || sessions.length > 0;
 
@@ -193,14 +228,27 @@ const AppContent: React.FC = () => {
     setScannerModalOpen(true);
   };
 
-  const handleSaveTicket = (newTicket: PhysicalTicketPass) => {
+  const handleSaveTicket = async (newTicket: PhysicalTicketPass) => {
     setTickets((prev) => [newTicket, ...prev]);
+    try {
+      const persisted = await ticketService.mintTicket(newTicket);
+      if (persisted) {
+        setTickets((prev) => prev.map((t) => (t.ticketId === newTicket.ticketId ? persisted : t)));
+      }
+    } catch (err) {
+      console.warn('Failed to persist ticket to Supabase:', err);
+    }
   };
 
-  const handleCheckInTicket = (ticketId: string) => {
+  const handleCheckInTicket = async (ticketId: string) => {
     setTickets((prev) =>
       prev.map((t) => (t.ticketId === ticketId ? { ...t, status: 'CHECKED_IN', isAdmitted: true } : t))
     );
+    try {
+      await ticketService.checkInTicket(ticketId);
+    } catch (err) {
+      console.warn('Failed to persist check-in to Supabase:', err);
+    }
   };
 
   const handleAddMember = (newMember: ClubMember) => {
@@ -234,20 +282,13 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const handleUpdateSession = async (updatedSession: ScheduleSession) => {
+  const handleUpdateSession = (updatedSession: ScheduleSession) => {
     setSessions((prev) => prev.map((s) => (s.id === updatedSession.id ? updatedSession : s)));
-    try {
-      const updated = await eventService.updateEvent(updatedSession.id, updatedSession);
-      if (updated) {
-        setSessions((prev) => prev.map((s) => (s.id === updatedSession.id ? updated : s)));
-      }
-    } catch (err) {
-      console.warn('Failed to update session in Supabase:', err);
-    }
   };
 
   const handleDeleteSession = async (sessionId: string) => {
     setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    setTickets((prev) => prev.filter((t) => t.eventId !== sessionId));
     await eventService.deleteEvent(sessionId);
   };
 
@@ -256,9 +297,17 @@ const AppContent: React.FC = () => {
     await ticketService.deleteTicket(ticketId, eventId);
   };
 
+  const liveStats = useMemo(() => ({
+    ...GLOBAL_STATS,
+    activeMembers: combinedMembers.length || 0,
+    totalSessionsLogged: sessions.length || 0,
+    totalHoursExecuted: combinedMembers.reduce((acc, m) => acc + (m.hoursContributed || 0), 0),
+    productionDeployments: 0,
+  }), [combinedMembers, sessions]);
+
   return (
     <div className="min-h-screen bg-[#08080a] text-zinc-100 relative selection:bg-white selection:text-black overflow-x-clip">
-      {/* React Bits WebGL Aurora Background — Sole Background */}
+      {/* Background Visual */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <Aurora
           colorStops={['#7cff67', '#B497CF', '#5227FF']}
@@ -278,12 +327,13 @@ const AppContent: React.FC = () => {
         onOpenScanner={isAdmin ? handleOpenScanner : undefined}
         onOpenRSVP={() => handleOpenRSVP()}
         hasEvents={hasEvents}
+        gifFilledVh={activeTab === 'dashboard' ? 1.925 : 0}
       />
 
       {/* Main Content Pages */}
       {activeTab === 'dashboard' ? (
         <GlobalDashboard
-          stats={GLOBAL_STATS}
+          stats={liveStats}
           logs={logs}
           featuredEvent={events[0]}
           setActiveTab={setActiveTab}

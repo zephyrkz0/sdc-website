@@ -29,6 +29,13 @@ interface NavbarProps {
   onOpenScanner?: () => void;
   onOpenRSVP?: () => void;
   hasEvents?: boolean;
+  /**
+   * When > 0 (dashboard mode):
+   *   - Fully hidden while scrollY < gifFilledVh × innerHeight (GIF expanding phase)
+   *   - Scroll-direction-aware after that: shows on scroll-down, hides on scroll-up
+   * When 0: always visible (all other tabs)
+   */
+  gifFilledVh?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -37,32 +44,58 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenScanner,
   onOpenRSVP,
   hasEvents = false,
+  gifFilledVh = 0,
 }) => {
   const { currentUser, logout, setAuthModalOpen, isAdmin } = useAuth();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [muted, setMuted] = useState(isAudioMuted());
-  const [navVisible, setNavVisible] = useState(activeTab !== 'dashboard');
+
+  /**
+   * Navbar visibility — two phases:
+   *  Phase 1 (gifFilledVh > 0 && scrollY < gifFilledVh × vh): completely hidden
+   *  Phase 2 (scrollY >= gifFilledVh × vh): classic smart navbar
+   *    – scrolling DOWN  → visible
+   *    – scrolling UP    → hidden
+   */
+  const [navVisible, setNavVisible] = useState(gifFilledVh === 0);
 
   useEffect(() => {
-    // If on other tabs (directory, schedule, profile, etc.), always visible
-    if (activeTab !== 'dashboard') {
+    if (gifFilledVh === 0) {
       setNavVisible(true);
       return;
     }
 
+    const gifThreshold = () => gifFilledVh * window.innerHeight;
+    let lastY = window.scrollY;
+
     const handleScroll = () => {
-      // In dashboard: GIF stays fullscreen for a while.
-      // Show navbar only after user has scrolled past the full zoom stage (~2.6 viewports).
-      const threshold = window.innerHeight * 2.6;
-      setNavVisible(window.scrollY > threshold);
+      const y = window.scrollY;
+      const threshold = gifThreshold();
+
+      if (y < threshold) {
+        // Phase 1: GIF still expanding — always hide
+        setNavVisible(false);
+      } else {
+        // Phase 2: GIF is full screen — show on scroll-down, hide on scroll-up
+        if (y > lastY) {
+          // Scrolling DOWN → reveal navbar
+          setNavVisible(true);
+        } else if (y < lastY) {
+          // Scrolling UP → hide navbar
+          setNavVisible(false);
+        }
+      }
+
+      lastY = y;
     };
 
+    // Initialise on mount
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [activeTab]);
+  }, [gifFilledVh]);
 
   const handleToggleAudio = () => {
     const isNowMuted = toggleGlobalAudio();
@@ -94,16 +127,14 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <motion.header
+      className="sticky top-0 z-50 bg-[#08080c]/90 backdrop-blur-md border-b border-zinc-800/80 font-mono select-none"
       initial={false}
       animate={{
         opacity: navVisible ? 1 : 0,
-        y: navVisible ? 0 : -30,
-      }}
-      style={{
+        y: navVisible ? 0 : -12,
         pointerEvents: navVisible ? 'auto' : 'none',
       }}
-      transition={{ duration: 0.35, ease: 'easeOut' }}
-      className="sticky top-0 z-50 bg-[#08080c]/90 backdrop-blur-md border-b border-zinc-800/80 font-mono select-none"
+      transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo: ✦ SDC (Matching Frames) */}
@@ -153,6 +184,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
+
+          {/* Admin Ticket Scanner Button */}
+          {isAdmin && onOpenScanner && (
+            <button
+              onClick={() => {
+                playCyberClick();
+                onOpenScanner();
+              }}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 border border-purple-500/50 bg-purple-950/40 text-purple-200 font-bold uppercase text-xs tracking-wider hover:bg-purple-900/60 hover:border-purple-400 transition-all shadow-[0_0_10px_rgba(168,85,247,0.2)]"
+              title="Ticket Check-in Scanner"
+            >
+              <QrCode size={14} />
+              <span>SCANNER</span>
+            </button>
+          )}
 
           {/* RSVP PASS Button (Frame 5) — hidden when no events */}
           {hasEvents && (
@@ -219,6 +265,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <Ticket size={13} />
                         <span>My Passes</span>
                       </button>
+                      {isAdmin && onOpenScanner && (
+                        <button
+                          onClick={() => {
+                            playCyberClick();
+                            setUserDropdownOpen(false);
+                            onOpenScanner();
+                          }}
+                          className="w-full text-left p-2 text-purple-300 hover:text-white hover:bg-purple-950/40 flex items-center gap-2"
+                        >
+                          <QrCode size={13} />
+                          <span>Check-in Scanner</span>
+                        </button>
+                      )}
                     </div>
                     <div className="pt-1">
                       <button
@@ -284,6 +343,34 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {item.label}
               </button>
             ))}
+
+            {hasEvents && onOpenRSVP && (
+              <button
+                onClick={() => {
+                  playCyberClick();
+                  setMobileMenuOpen(false);
+                  onOpenRSVP();
+                }}
+                className="w-full text-center p-3 text-xs font-bold uppercase tracking-wider transition-all bg-white text-black hover:bg-zinc-200 flex items-center justify-center gap-2 mt-2"
+              >
+                <Sparkles size={14} />
+                <span>RSVP PASS</span>
+              </button>
+            )}
+
+            {isAdmin && onOpenScanner && (
+              <button
+                onClick={() => {
+                  playCyberClick();
+                  setMobileMenuOpen(false);
+                  onOpenScanner();
+                }}
+                className="w-full text-center p-3 text-xs font-bold uppercase tracking-wider transition-all bg-purple-950 border border-purple-600 text-purple-200 hover:bg-purple-900 flex items-center justify-center gap-2"
+              >
+                <QrCode size={14} />
+                <span>TICKET SCANNER</span>
+              </button>
+            )}
 
             {!currentUser && (
               <button

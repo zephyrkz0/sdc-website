@@ -18,30 +18,28 @@ export interface RoleVisualStyles {
 export const getRoleTier = (userOrMember?: Partial<ClubMember | UserAccount> | null): RoleTier => {
   if (!userOrMember) return 'MEMBER';
 
-  const role = (userOrMember.role || userOrMember.roleTitle || '').toLowerCase();
-  const email = (userOrMember.email || '').toLowerCase();
-  const username = (userOrMember.username || userOrMember.callsign || '').toLowerCase();
-  const tier = (userOrMember.tier || '').toLowerCase();
+  const role = (userOrMember.role || '').toUpperCase().trim();
+  const roleTitle = (userOrMember.roleTitle || '').toUpperCase().trim();
+  const tier = (userOrMember.tier || '').toUpperCase().trim();
 
   // Super Admin check
   if (
-    role.includes('super admin') ||
-    role.includes('master admin') ||
-    role === 'super_admin' ||
-    role === 'master_admin' ||
-    tier === 'master_admin' ||
-    tier === 'super_admin'
+    role === 'SUPER_ADMIN' ||
+    role === 'SUPER ADMIN' ||
+    role === 'MASTER_ADMIN' ||
+    tier === 'SUPER_ADMIN' ||
+    tier === 'MASTER_ADMIN' ||
+    roleTitle === 'SUPER ADMIN' ||
+    roleTitle === 'MASTER ADMIN'
   ) {
     return 'SUPER_ADMIN';
   }
 
-  // Admin check
+  // Admin check (strict role check, no substring or position matching)
   if (
-    role.includes('admin') ||
-    role === 'admin' ||
-    tier === 'admin' ||
-    tier === 'command_leadership' ||
-    tier === 'core_excom'
+    role === 'ADMIN' ||
+    tier === 'ADMIN' ||
+    roleTitle === 'ADMIN'
   ) {
     return 'ADMIN';
   }

@@ -1,10 +1,19 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { GalleryItem } from '../types';
 
+const ALLOWED_GALLERY_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const OFFLINE_GALLERY_KEY = 'sdc_offline_gallery_v2';
+
 export const galleryService = {
-  // Fetch all gallery items from Supabase
+  // Fetch all gallery items from Supabase (or offline persistent cache)
   async fetchGalleryItems(): Promise<GalleryItem[]> {
     if (!isSupabaseConfigured()) {
+      try {
+        const cached = localStorage.getItem(OFFLINE_GALLERY_KEY);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch {}
       return [];
     }
 
@@ -49,14 +58,24 @@ export const galleryService = {
       tags?: string[];
     }
   ): Promise<GalleryItem | null> {
+    if (!file || !ALLOWED_GALLERY_MIMES.includes(file.type.toLowerCase())) {
+      throw new Error('Security Error: Only JPEG, PNG, WEBP, and GIF images are permitted for upload.');
+    }
+
     if (!isSupabaseConfigured()) {
-      // Local preview fallback
-      const localUrl = URL.createObjectURL(file);
+      // Local persistent fallback: convert file to Base64 data URL so it never vanishes on reload
+      const base64Url: string = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve((reader.result as string) || '');
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(file);
+      });
+
       const localItem: GalleryItem = {
         id: `local-img-${Date.now()}`,
         title: metadata.title,
         category: metadata.category,
-        imageUrl: localUrl,
+        imageUrl: base64Url,
         description: metadata.description,
         date: new Date().toISOString().split('T')[0],
         photographer: metadata.photographer || 'SDC Member',
@@ -64,6 +83,13 @@ export const galleryService = {
         tags: metadata.tags || [],
         createdAt: new Date().toISOString(),
       };
+
+      try {
+        const cached = localStorage.getItem(OFFLINE_GALLERY_KEY);
+        const existing: GalleryItem[] = cached ? JSON.parse(cached) : [];
+        localStorage.setItem(OFFLINE_GALLERY_KEY, JSON.stringify([localItem, ...existing]));
+      } catch {}
+
       return localItem;
     }
 
@@ -135,6 +161,14 @@ export const galleryService = {
 
   // Delete a gallery photo
   async deletePhoto(id: string): Promise<boolean> {
+    try {
+      const cached = localStorage.getItem(OFFLINE_GALLERY_KEY);
+      if (cached) {
+        const existing: GalleryItem[] = JSON.parse(cached);
+        localStorage.setItem(OFFLINE_GALLERY_KEY, JSON.stringify(existing.filter((item) => item.id !== id)));
+      }
+    } catch {}
+
     if (!isSupabaseConfigured()) return true;
 
     try {
@@ -145,7 +179,7 @@ export const galleryService = {
 
       return !error;
     } catch (err) {
-      console.error('Failed to delete photo:', err);
+      console.error('Failed to delete photo from Supabase:', err);
       return false;
     }
   }

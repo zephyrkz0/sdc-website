@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { NavTab } from '../common/Navbar';
 import { DomainRadar } from './DomainRadar';
+import { StatCounter } from './StatCounter';
 import { Users, Calendar } from 'lucide-react';
 import { playCyberClick } from '../common/AudioEffects';
 
@@ -15,6 +16,7 @@ interface GlobalDashboardProps {
 }
 
 export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
+  stats,
   setActiveTab,
 }) => {
   // Pinned scroll container — 350vh gives ample scroll room for smooth zoom + held fullscreen
@@ -60,8 +62,8 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
         only then releases to normal content & navbar.
       */}
       <div ref={pinRef} style={{ height: '350vh' }} className="relative">
-        {/* Sticky viewport-locked canvas */}
-        <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden">
+        {/* Sticky viewport-locked canvas (100dvh prevents mobile address bar jitter) */}
+        <div className="sticky top-0 h-[100dvh] w-full flex flex-col items-center justify-center overflow-hidden">
 
           {/* Brand title — centered in viewport at rest */}
           <motion.div
@@ -87,7 +89,7 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
               <img
                 src="/assets/ascii_landing_desktop.gif"
                 alt="SDC Landing Visual"
-                className="w-full h-full object-cover select-none"
+                className="w-full h-full object-cover object-center select-none"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/assets/ascii_landing.gif';
                 }}
@@ -153,6 +155,39 @@ export const GlobalDashboard: React.FC<GlobalDashboardProps> = ({
                 <span>SESSION SCHEDULE</span>
               </button>
             </div>
+          </div>
+        </section>
+
+        {/* LIVE STATS METRICS GRID (B3) */}
+        <section className="space-y-4">
+          <div className="border-b border-zinc-800 pb-2">
+            <span className="text-zinc-400 font-bold uppercase tracking-wider text-xs font-mono">CLUB METRICS & OPERATIONS</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCounter
+              label="Active Members"
+              value={stats?.activeMembers || stats?.totalUpskilledMembers || 0}
+              suffix="+"
+              detail="Registered, active technical club members & contributors"
+            />
+            <StatCounter
+              label="Sessions Executed"
+              value={stats?.totalSessionsLogged || 0}
+              suffix="+"
+              detail="Daily lab sessions, hands-on workshops & tech talks"
+            />
+            <StatCounter
+              label="Hours Executed"
+              value={stats?.totalHoursExecuted || 0}
+              suffix="h"
+              detail="Cumulative technical mentoring and lab coding hours"
+            />
+            <StatCounter
+              label="Projects & Deploys"
+              value={stats?.productionDeployments || 0}
+              suffix="+"
+              detail="Active production deployments and open-source contributions"
+            />
           </div>
         </section>
 
