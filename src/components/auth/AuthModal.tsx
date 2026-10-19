@@ -37,6 +37,14 @@ export const AuthModal: React.FC = () => {
       setIsLoading(false);
       setGoogleStatus('IDLE');
     }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && authModalOpen) {
+        handleCloseModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [authModalOpen]);
 
   const handleCloseModal = () => {
@@ -230,6 +238,9 @@ export const AuthModal: React.FC = () => {
 
       {/* Modal Container */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Authentication Terminal"
         style={{
           position: 'relative',
           zIndex: 10,
@@ -609,18 +620,6 @@ export const AuthModal: React.FC = () => {
                 <CheckCircle2 size={14} className="text-emerald-400 shrink-0 mt-0.5" />
                 <span>{infoMsg}</span>
               </div>
-              {mode === 'FORGOT_PASSWORD' && (
-                <div className="pt-2 border-t border-emerald-800/60 flex items-center justify-between text-[10px]">
-                  <span className="text-zinc-300">Need to reset right now?</span>
-                  <button
-                    type="button"
-                    onClick={() => handleModeSwitch('SET_NEW_PASSWORD')}
-                    className="text-white font-bold underline hover:text-emerald-300"
-                  >
-                    Set New Password Directly →
-                  </button>
-                </div>
-              )}
             </div>
           )}
 

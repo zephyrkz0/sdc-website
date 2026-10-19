@@ -2,6 +2,51 @@ import { ClubMember } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { CLUB_MEMBERS } from '../data/mockData';
 
+const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+export const mapDbMemberToClubMember = (m: any): ClubMember => {
+  const rawRole = (m.role || '').toUpperCase();
+  const roleTier =
+    rawRole.includes('SUPER_ADMIN') || rawRole.includes('SUPER ADMIN') || rawRole.includes('MASTER_ADMIN')
+      ? 'SUPER_ADMIN'
+      : rawRole === 'ADMIN'
+      ? 'ADMIN'
+      : 'MEMBER';
+
+  return {
+    id: m.id || `mem-${Date.now()}`,
+    userId: m.user_id || m.userId || m.id,
+    callsign: m.username || m.callsign || 'member',
+    username: m.username || m.callsign || 'member',
+    fullName: m.full_name || `${m.first_name || ''} ${m.last_name || ''}`.trim() || 'SDC Member',
+    firstName: m.first_name || '',
+    lastName: m.last_name || '',
+    email: m.email || '',
+    role: m.role || 'Member',
+    roleTitle: m.role || 'Member',
+    tier: roleTier,
+    track: m.track || 'Web Development',
+    opId: m.op_id || `SDC-${(m.id || Date.now().toString()).substring(0, 6)}`,
+    avatarUrl: m.avatar_url || m.avatarUrl || m.avatarurl || '',
+    bio: m.bio || '',
+    branch: m.branch || '',
+    semester: m.semester || '',
+    hoursContributed: m.hours_contributed ?? m.hoursContributed ?? 0,
+    completedModules: m.completed_modules ?? m.completedModules ?? 0,
+    projectsCount: m.projects_count ?? m.projectsCount ?? 0,
+    skills: Array.isArray(m.skills) ? m.skills : [],
+    badges: Array.isArray(m.badges) ? m.badges : [],
+    projects: Array.isArray(m.projects) ? m.projects : [],
+    githubUrl: m.github_url || m.github || '',
+    github: m.github || m.github_url || '',
+    linkedinUrl: m.linkedin_url || m.linkedin || '',
+    linkedin: m.linkedin || m.linkedin_url || '',
+    location: m.location || 'CUCEK Campus',
+    joinedDate: m.joined_date || m.created_at || new Date().toISOString(),
+    status: m.status || 'ACTIVE',
+  };
+};
+
 export const memberService = {
   // Fetch all members from Supabase (or fallback to local mock data)
   async fetchMembers(): Promise<ClubMember[]> {
@@ -19,41 +64,7 @@ export const memberService = {
         return CLUB_MEMBERS;
       }
 
-      return data.map((m) => ({
-        id: m.id,
-        callsign: m.username || m.callsign || 'member',
-        username: m.username || m.callsign || 'member',
-        fullName: m.full_name || `${m.first_name || ''} ${m.last_name || ''}`.trim() || 'SDC Member',
-        firstName: m.first_name || '',
-        lastName: m.last_name || '',
-        email: m.email || '',
-        role: m.role || 'Member',
-        roleTitle: m.role || 'Member',
-        tier: m.role?.toLowerCase().includes('super admin') || m.role?.toLowerCase().includes('master')
-          ? 'SUPER_ADMIN'
-          : m.role?.toLowerCase().includes('admin') || m.role?.toLowerCase().includes('lead')
-          ? 'ADMIN'
-          : 'MEMBER',
-        track: m.track || 'Web Development',
-        opId: m.op_id || `SDC-${m.id.substring(0, 6)}`,
-        avatarUrl: m.avatar_url || m.avatarUrl || m.avatarurl || '',
-        bio: m.bio || '',
-        branch: m.branch || '',
-        semester: m.semester || '',
-        hoursContributed: m.hours_contributed || 0,
-        completedModules: m.completed_modules || 0,
-        projectsCount: m.projects_count || 0,
-        skills: Array.isArray(m.skills) ? m.skills : [],
-        badges: Array.isArray(m.badges) ? m.badges : [],
-        projects: Array.isArray(m.projects) ? m.projects : [],
-        githubUrl: m.github_url || m.github || '',
-        github: m.github || m.github_url || '',
-        linkedinUrl: m.linkedin_url || m.linkedin || '',
-        linkedin: m.linkedin || m.linkedin_url || '',
-        location: m.location || 'CUCEK Campus',
-        joinedDate: m.joined_date || m.created_at || new Date().toISOString(),
-        status: m.status || 'ACTIVE',
-      }));
+      return data.map(mapDbMemberToClubMember);
     } catch (err) {
       console.warn('Failed to fetch live members from Supabase, using mock data:', err);
       return CLUB_MEMBERS;
@@ -68,14 +79,24 @@ export const memberService = {
 
   // Create or Update a member record
   async createOrUpdateMember(member: Partial<ClubMember> & { userId?: string; lastSignInAt?: string; hasCompletedOnboarding?: boolean }): Promise<ClubMember | null> {
+    const cleanEmail = member.email ? member.email.trim().toLowerCase() : `member_${Date.now()}@sdc.internal`;
+    const cleanUsername = member.username || member.callsign || `member_${Date.now().toString().slice(-4)}`;
+
     if (!isSupabaseConfigured()) {
-      return null;
+      // Offline fallback: construct and return fully formed ClubMember
+      const offlineMember = mapDbMemberToClubMember({
+        ...member,
+        id: member.id || `offline-mem-${Date.now()}`,
+        username: cleanUsername,
+        email: cleanEmail,
+        full_name: member.fullName || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'SDC Member',
+        hours_contributed: member.hoursContributed ?? 0,
+        role: member.role || member.roleTitle || 'MEMBER',
+      });
+      return offlineMember;
     }
 
     try {
-      const cleanEmail = member.email ? member.email.trim().toLowerCase() : `member_${Date.now()}@sdc.internal`;
-      const cleanUsername = member.username || member.callsign || `member_${Date.now().toString().slice(-4)}`;
-
       const payload: Record<string, any> = {
         first_name: member.firstName || member.fullName?.split(' ')[0] || 'Member',
         last_name: member.lastName || member.fullName?.split(' ').slice(1).join(' ') || '',
@@ -89,6 +110,7 @@ export const memberService = {
         avatar_url: member.avatarUrl || null,
         bio: member.bio || '',
         skills: member.skills || [],
+        hours_contributed: member.hoursContributed ?? 0,
         github_url: member.githubUrl || member.github || null,
         linkedin_url: member.linkedinUrl || member.linkedin || null,
         status: member.status || 'ACTIVE',
@@ -133,7 +155,7 @@ export const memberService = {
         return null;
       }
 
-      return res.data as unknown as ClubMember;
+      return mapDbMemberToClubMember(res.data);
     } catch (err) {
       console.error('Failed to create/update member in Supabase:', err);
       return null;
@@ -156,42 +178,7 @@ export const memberService = {
       const { data, error } = await query.maybeSingle();
       if (error || !data) return null;
 
-      return {
-        id: data.id,
-        userId: data.user_id || data.id,
-        callsign: data.username || data.callsign || 'member',
-        username: data.username || data.callsign || 'member',
-        fullName: data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'SDC Member',
-        firstName: data.first_name || '',
-        lastName: data.last_name || '',
-        email: data.email || '',
-        role: data.role || 'Member',
-        roleTitle: data.role || 'Member',
-        tier: data.role?.toLowerCase().includes('super admin') || data.role?.toLowerCase().includes('master')
-          ? 'SUPER_ADMIN'
-          : data.role?.toLowerCase().includes('admin') || data.role?.toLowerCase().includes('lead')
-          ? 'ADMIN'
-          : 'MEMBER',
-        track: data.track || 'Web Development',
-        opId: data.op_id || `SDC-${(data.id || '').substring(0, 6)}`,
-        avatarUrl: data.avatar_url || data.avatarUrl || '',
-        bio: data.bio || '',
-        branch: data.branch || '',
-        semester: data.semester || '',
-        hoursContributed: data.hours_contributed || 0,
-        completedModules: data.completed_modules || 0,
-        projectsCount: data.projects_count || 0,
-        skills: Array.isArray(data.skills) ? data.skills : [],
-        badges: Array.isArray(data.badges) ? data.badges : [],
-        projects: Array.isArray(data.projects) ? data.projects : [],
-        githubUrl: data.github_url || data.github || '',
-        github: data.github || data.github_url || '',
-        linkedinUrl: data.linkedin_url || data.linkedin || '',
-        linkedin: data.linkedin || data.linkedin_url || '',
-        location: data.location || 'CUCEK Campus',
-        joinedDate: data.joined_date || data.created_at || new Date().toISOString(),
-        status: data.status || 'ACTIVE',
-      };
+      return mapDbMemberToClubMember(data);
     } catch {
       return null;
     }
@@ -202,6 +189,9 @@ export const memberService = {
   },
 
   async uploadAvatar(file: File): Promise<string> {
+    if (!file || !ALLOWED_IMAGE_MIMES.includes(file.type.toLowerCase())) {
+      throw new Error('Security Error: Only JPEG, PNG, WEBP, and GIF images are permitted for upload.');
+    }
     // 1. If Supabase is configured, attempt upload to Supabase Storage
     if (isSupabaseConfigured()) {
       try {
@@ -276,6 +266,30 @@ export const memberService = {
       return true;
     } catch (err) {
       console.warn('Member deletion cleanup notice:', err);
+      return false;
+    }
+  },
+
+  // Secure role assignment via RPC
+  async setMemberRole(targetMemberId: string, newRole: string): Promise<boolean> {
+    if (!isSupabaseConfigured()) return true;
+    try {
+      if (this.isValidUUID(targetMemberId)) {
+        const { error } = await supabase.rpc('set_member_role', {
+          target_member_id: targetMemberId,
+          target_role: newRole,
+        });
+        if (!error) return true;
+      }
+
+      // Direct update fallback if RPC not installed
+      const { error: updateErr } = await supabase
+        .from('members')
+        .update({ role: newRole })
+        .eq('id', targetMemberId);
+
+      return !updateErr;
+    } catch {
       return false;
     }
   },

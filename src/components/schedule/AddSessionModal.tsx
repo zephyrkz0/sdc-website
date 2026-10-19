@@ -95,12 +95,21 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
       const prevHtmlOverflow = document.documentElement.style.overflow;
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+
       return () => {
         document.body.style.overflow = prevBodyOverflow;
         document.documentElement.style.overflow = prevHtmlOverflow;
+        window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -111,6 +120,16 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
 
     if (!title.trim() || !code.trim() || !instructorName.trim()) {
       setErrorMsg('Session Title, Session Code, and Speaker / Instructor Name are required.');
+      return;
+    }
+
+    if (!date) {
+      setErrorMsg('Please select a valid event date.');
+      return;
+    }
+
+    if (timeStart && timeEnd && timeEnd <= timeStart) {
+      setErrorMsg('Session end time must be after start time.');
       return;
     }
 
@@ -199,6 +218,9 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
   const modalContent = (
     <div
       data-lenis-prevent="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="session-modal-title"
       onWheel={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
       style={{

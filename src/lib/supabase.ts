@@ -1,7 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const getEnvVar = (key: string): string => {
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return (import.meta.env as Record<string, string | undefined>)[key] || '';
+  }
+  if (typeof globalThis !== 'undefined' && (globalThis as any).process?.env) {
+    return (globalThis as any).process.env[key] || '';
+  }
+  return '';
+};
+
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
+const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
 
 export const isSupabaseConfigured = (): boolean => {
   return Boolean(
@@ -12,14 +22,17 @@ export const isSupabaseConfigured = (): boolean => {
   );
 };
 
-// Create the Supabase client instance (or a dummy client if not yet configured)
+const configured = isSupabaseConfigured();
+
+// Create the Supabase client instance (or a safe dummy client if not yet configured)
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key',
+  configured ? supabaseUrl : 'https://sdc-unconfigured-local.supabase.co',
+  configured ? supabaseAnonKey : 'dummy-anon-key-local-only-not-configured',
   {
     auth: {
-      persistSession: true,
-      autoRefreshToken: true,
+      persistSession: configured,
+      autoRefreshToken: configured,
     },
   }
 );
+

@@ -69,6 +69,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
+    // When Supabase is configured, session must be verified by Supabase Auth (prevents localStorage injection)
+    if (isSupabaseConfigured()) {
+      return null;
+    }
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_SESSION_KEY);
       if (saved) {
@@ -88,7 +92,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync state to localStorage cache
   useEffect(() => {
     try {
-      localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(allUsers));
+      if (!isSupabaseConfigured()) {
+        localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(allUsers));
+      } else {
+        localStorage.removeItem(LOCAL_STORAGE_USERS_KEY);
+      }
     } catch {}
   }, [allUsers]);
 
@@ -179,12 +187,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    // 4. Resolve user role hierarchy from database
+    // 4. Resolve user role hierarchy from database (exact match only, never broad substrings like LEAD or MASTER)
     let role: UserRole = 'MEMBER';
-    const roleString = (memberData?.role || '').toUpperCase();
-    if (roleString.includes('SUPER_ADMIN') || roleString.includes('SUPER ADMIN') || roleString.includes('MASTER')) {
+    const roleString = (memberData?.role || '').toUpperCase().trim();
+    if (roleString === 'SUPER_ADMIN' || roleString === 'SUPER ADMIN' || roleString === 'MASTER_ADMIN') {
       role = 'SUPER_ADMIN';
-    } else if (roleString.includes('ADMIN') || roleString.includes('LEAD')) {
+    } else if (roleString === 'ADMIN') {
       role = 'ADMIN';
     } else {
       role = 'MEMBER';
@@ -256,12 +264,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         syncMemberProfileFromSupabase(session.user);
+      } else {
+        setCurrentUser(null);
+        try {
+          localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
+        } catch {}
       }
     });
 
     // 2. Real-time auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT' || !session?.user) {
         setCurrentUser(null);
         try {
           localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
@@ -339,7 +352,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (!isSupabaseConfigured()) {
-      // Offline fallback
+      // Offline fallback: enforce password requirement
+      if (!password || password.length < 6) {
+        return { success: false, message: 'Password is required (minimum 6 characters).' };
+      }
       const cleanEmail = rawInput.toLowerCase();
       const user = allUsers.find((u) => u.email.toLowerCase() === cleanEmail || u.username?.toLowerCase() === cleanEmail);
       if (!user) {
@@ -737,6 +753,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const cleanup = () => {
                 window.removeEventListener('message', handleMessage);
                 window.removeEventListener('storage', handleStorage);
+                try {
+                  localStorage.removeItem('sdc_oauth_exchange');
+                } catch (e) {}
                 if (bc) {
                   try {
                     bc.close();
@@ -801,6 +820,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const handleStorage = async (event: StorageEvent) => {
                 if (event.key === 'sdc_oauth_exchange' && event.newValue) {
                   try {
+                    localStorage.removeItem('sdc_oauth_exchange');
                     const parsed = JSON.parse(event.newValue);
                     if (parsed?.payload?.type === 'SDC_OAUTH_SUCCESS') {
                       await processOAuthResult(parsed.payload);
@@ -891,6 +911,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { id, email, username } = currentUser;
 
     try {
+      if (isSupabaseConfigured()) {
+        try {
+          await supabase.rpc('delete_user_account');
+        } catch (rpcErr) {
+          console.warn('RPC delete_user_account notice:', rpcErr);
+        }
+      }
       await memberService.deleteMemberByIdentity(email, username, id);
       await ticketService.deleteTicketsByUser(email, username, id);
       if (isSupabaseConfigured()) {
@@ -927,7 +954,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           firstName: updated.firstName,
           lastName: updated.lastName,
           fullName: updated.fullName,
-          role: updated.roleTitle || updated.role,
+          role: updated.role,
           track: updated.track,
           branch: updated.branch,
           semester: updated.semester,
@@ -962,6 +989,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     targetRole: UserRole,
     customPositionTitle?: string
   ): Promise<{ success: boolean; message: string }> => {
+    if (!isAdmin) {
+      return { success: false, message: 'Unauthorized: Only club administrators can assign member roles.' };
+    }
+
     const user = allUsers.find((u) => u.id === userId || (u as any).userId === userId);
     if (!user) return { success: false, message: 'User not found in registry.' };
 
@@ -970,6 +1001,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated: UserAccount = {
       ...user,
       role: targetRole,
+      tier: targetRole,
       roleTitle,
     };
 
@@ -980,13 +1012,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (isSupabaseConfigured()) {
       try {
-        await memberService.createOrUpdateMember({
-          id: user.id,
-          userId: user.userId || user.id,
-          email: user.email,
-          username: user.username,
-          role: roleTitle,
-        });
+        const rpcOk = await memberService.setMemberRole(user.id, targetRole);
+        if (!rpcOk) {
+          await memberService.createOrUpdateMember({
+            id: user.id,
+            userId: user.userId || user.id,
+            email: user.email,
+            username: user.username,
+            role: targetRole,
+          });
+        }
       } catch (err) {
         console.warn('Failed to sync role change to Supabase server:', err);
       }

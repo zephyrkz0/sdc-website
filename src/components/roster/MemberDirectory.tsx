@@ -5,7 +5,7 @@ import { MemberRow } from './OperativeRow';
 import { MemberModal } from './MemberModal';
 import { AddMemberModal } from './AddMemberModal';
 import { useAuth } from '../../context/AuthContext';
-import { Search, Plus, Users, Shield, Key, LayoutGrid, List, Check, Crown } from 'lucide-react';
+import { Search, Plus, Users, Shield, Key, LayoutGrid, List, Check, Crown, Download } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { memberService } from '../../services/memberService';
 import { getRoleTier, getRoleStyles } from '../../utils/roleUtils';
@@ -30,7 +30,7 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
   const [sortBy, setSortBy] = useState<'HOURS' | 'PROJECTS' | 'NAME'>('HOURS');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [viewAccountsTable, setViewAccountsTable] = useState(false);
-  const [roleStatusMsg, setRoleStatusMsg] = useState('');
+  const [roleStatusMap, setRoleStatusMap] = useState<{ [userId: string]: { message: string; success: boolean } }>({});
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
   const [draftPositions, setDraftPositions] = useState<{ [userId: string]: string }>({});
   const [draftRoles, setDraftRoles] = useState<{ [userId: string]: UserRole }>({});
@@ -81,6 +81,34 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
     });
   }, [allUsers, adminSearchQuery]);
 
+  const handleExportCSV = () => {
+    playCyberClick();
+    const headers = ['Full Name', 'Username', 'Role / Position', 'Track', 'Branch', 'Semester', 'Hours Contributed', 'Email', 'Skills'];
+    const rows = filteredMembers.map((m) => [
+      `"${(m.fullName || `${m.firstName || ''} ${m.lastName || ''}`).trim().replace(/"/g, '""')}"`,
+      `"${(m.username || m.callsign || '').replace(/"/g, '""')}"`,
+      `"${(m.role || 'Member').replace(/"/g, '""')}"`,
+      `"${(m.track || '').replace(/"/g, '""')}"`,
+      `"${(m.branch || '').replace(/"/g, '""')}"`,
+      `"${(m.semester || '').replace(/"/g, '""')}"`,
+      m.hoursContributed || 0,
+      `"${(m.email || '').replace(/"/g, '""')}"`,
+      `"${(m.skills || []).join('; ').replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `SDC_MEMBER_ROSTER_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    playSuccessChime();
+  };
+
   const handleSaveUserAssignment = async (userId: string, userEmail: string = '', username: string = '') => {
     playCyberClick();
 
@@ -99,7 +127,10 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
           (targetRole === 'SUPER_ADMIN' ? 'Super Admin' : targetRole === 'ADMIN' ? 'Admin' : 'Core Member');
 
     const result = await updateUserRoleAndPosition(userId, targetRole, targetPosition);
-    setRoleStatusMsg(result.message);
+    setRoleStatusMap((prev) => ({
+      ...prev,
+      [userId]: { message: result.message, success: result.success },
+    }));
 
     if (result.success) {
       playSuccessChime();
@@ -194,9 +225,6 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
                 className="w-full pl-9 pr-4 py-2 bg-[#121218] border border-zinc-800 text-xs text-white placeholder:text-zinc-600 focus:outline-none"
               />
             </div>
-            {roleStatusMsg && (
-              <span className="text-xs font-mono text-amber-300 animate-pulse">{roleStatusMsg}</span>
-            )}
           </div>
 
           <div className="border border-zinc-800 divide-y divide-zinc-800">
@@ -213,6 +241,7 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
               const currentRole: UserRole = draftRoles[u.id] || u.role || 'MEMBER';
               const rowTier = getRoleTier(u);
               const rowStyles = getRoleStyles(rowTier);
+              const status = roleStatusMap[u.id];
 
               return (
                 <div
@@ -247,10 +276,20 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
                     </select>
                     <button
                       onClick={() => handleSaveUserAssignment(u.id, u.email, u.username)}
-                      className="px-3 py-1 bg-white text-black font-bold text-[10px] uppercase"
+                      className="px-3 py-1 bg-white text-black font-bold text-[10px] uppercase hover:bg-zinc-200 transition-colors"
                     >
                       SAVE
                     </button>
+                    {status && (
+                      <span
+                        className={`text-[10px] font-bold ${
+                          status.success ? 'text-emerald-400' : 'text-red-400'
+                        }`}
+                        title={status.message}
+                      >
+                        {status.success ? '✓ SAVED' : '! ERROR'}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -293,8 +332,17 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
           ))}
         </div>
 
-        {/* Sort & View Mode */}
-        <div className="flex items-center gap-3 font-mono text-xs shrink-0">
+        {/* Sort & View Mode & CSV Export */}
+        <div className="flex flex-wrap items-center gap-3 font-mono text-xs shrink-0">
+          <button
+            onClick={handleExportCSV}
+            className="px-3 py-1.5 bg-[#121218] border border-zinc-800 hover:border-zinc-500 text-zinc-300 hover:text-white text-xs font-bold uppercase flex items-center gap-1.5 transition-colors"
+            title="Download Member Roster as CSV"
+          >
+            <Download size={13} />
+            <span className="hidden sm:inline">EXPORT</span> CSV
+          </button>
+
           <div className="flex items-center gap-1.5">
             <span className="text-zinc-500 text-[10px]">SORT:</span>
             <select
@@ -368,7 +416,14 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
 
       {/* Member Details Modal */}
       {selectedMember && (
-        <MemberModal member={selectedMember} onClose={() => setSelectedMember(null)} />
+        <MemberModal
+          member={selectedMember}
+          onClose={() => setSelectedMember(null)}
+          onUpdateMember={(updated) => {
+            if (onUpdateMember) onUpdateMember(updated);
+            setSelectedMember(updated);
+          }}
+        />
       )}
 
       {/* Add Member Modal */}

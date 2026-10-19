@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, QrCode, CheckCircle2, AlertTriangle, Search, Shield, User, Sparkles } from 'lucide-react';
+import { X, QrCode, CheckCircle2, AlertTriangle, Camera, CameraOff, Video } from 'lucide-react';
 import { PhysicalTicketPass } from '../../types';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import confetti from 'canvas-confetti';
@@ -21,44 +21,159 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
   const [scanInput, setScanInput] = useState('');
   const [scannedResult, setScannedResult] = useState<PhysicalTicketPass | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanIntervalRef = useRef<number | null>(null);
 
-  if (!isOpen) return null;
+  // Stop camera stream safely
+  const stopCamera = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+    setCameraError('');
+  };
 
-  const handleScan = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Close on Escape & cleanup
+  useEffect(() => {
+    if (!isOpen) {
+      stopCamera();
+      return;
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        stopCamera();
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      stopCamera();
+    };
+  }, [isOpen, onClose]);
+
+  // Start Camera Stream
+  const startCamera = async () => {
+    setCameraError('');
     setErrorMsg('');
-    setScannedResult(null);
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraError('Camera access not supported on this device/browser.');
+        return;
+      }
 
-    const cleanInput = scanInput.trim().toUpperCase();
-    if (!cleanInput) return;
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: false,
+      });
 
-    // Search by ticketId or QR payload substring
-    const matched = tickets.find(
-      (t) =>
-        t.ticketId.toUpperCase() === cleanInput ||
-        t.qrPayload.includes(cleanInput) ||
-        t.attendeeCallsign.toUpperCase().includes(cleanInput) ||
-        t.barcodeNumber.includes(cleanInput)
-    );
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setIsCameraActive(true);
+
+      // Start detection loop if BarcodeDetector is available
+      if ('BarcodeDetector' in window) {
+        const barcodeDetector = new (window as any).BarcodeDetector({
+          formats: ['qr_code', 'code_128', 'ean_13', 'data_matrix'],
+        });
+
+        scanIntervalRef.current = window.setInterval(async () => {
+          if (!videoRef.current || videoRef.current.readyState < 2) return;
+          try {
+            const detected = await barcodeDetector.detect(videoRef.current);
+            if (detected && detected.length > 0) {
+              const rawValue = detected[0].rawValue;
+              if (rawValue) {
+                checkAndAdmitTicket(rawValue);
+                stopCamera();
+              }
+            }
+          } catch {}
+        }, 400);
+      }
+    } catch (err: any) {
+      console.warn('Camera stream notice:', err);
+      setCameraError(err.message || 'Unable to access camera. Please allow camera permissions.');
+      setIsCameraActive(false);
+    }
+  };
+
+  const checkAndAdmitTicket = (input: string) => {
+    const clean = input.trim();
+    if (!clean) return;
+
+    const upper = clean.toUpperCase();
+
+    // Strict validation: Require exact match on ticketId, barcode, security code, or parsed QR payload
+    const matched = tickets.find((t) => {
+      // 1. Exact match on ticketId
+      if (t.ticketId.toUpperCase() === upper) return true;
+
+      // 2. Exact match on barcodeNumber
+      if (t.barcodeNumber && t.barcodeNumber === clean) return true;
+
+      // 3. Exact match on accessSecurityCode
+      if (t.accessSecurityCode && t.accessSecurityCode.toUpperCase() === upper) return true;
+
+      // 4. Exact match or parsed JSON from ticket QR payload
+      try {
+        if (t.qrPayload) {
+          if (t.qrPayload.trim() === clean) return true;
+          const parsed = JSON.parse(t.qrPayload);
+          if (parsed.tkt && parsed.tkt.toUpperCase() === upper) return true;
+          if (parsed.sec && parsed.sec.toUpperCase() === upper) return true;
+        }
+      } catch {}
+
+      // 5. Scanned input is JSON payload
+      try {
+        const inputParsed = JSON.parse(clean);
+        if (inputParsed.tkt && t.ticketId.toUpperCase() === inputParsed.tkt.toUpperCase()) return true;
+        if (inputParsed.sec && t.accessSecurityCode && t.accessSecurityCode.toUpperCase() === inputParsed.sec.toUpperCase()) return true;
+      } catch {}
+
+      return false;
+    });
 
     if (matched) {
       setScannedResult(matched);
       onCheckIn(matched.ticketId);
       playSuccessChime();
       confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+      setErrorMsg('');
     } else {
       playCyberClick();
-      setErrorMsg(`No valid ticket found for [${cleanInput}].`);
+      setErrorMsg(`No valid ticket found matching exact identifier [${clean}].`);
     }
+  };
+
+  const handleScan = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setScannedResult(null);
+    checkAndAdmitTicket(scanInput);
   };
 
   const handleQuickTestScan = (ticket: PhysicalTicketPass) => {
     setScanInput(ticket.ticketId);
-    setScannedResult(ticket);
-    onCheckIn(ticket.ticketId);
-    playSuccessChime();
-    confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+    checkAndAdmitTicket(ticket.ticketId);
   };
+
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
@@ -70,6 +185,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
           exit={{ opacity: 0 }}
           onClick={() => {
             playCyberClick();
+            stopCamera();
             onClose();
           }}
           className="fixed inset-0 bg-black/85 backdrop-blur-md"
@@ -77,20 +193,26 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
 
         {/* Modal Content */}
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ticket-scanner-title"
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-xl bg-zinc-950 border border-zinc-700 shadow-2xl p-6 z-10 font-mono"
+          className="relative w-full max-w-xl bg-zinc-950 border border-zinc-700 shadow-2xl p-6 z-10 font-mono max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-zinc-800 text-xs text-zinc-400">
             <div className="flex items-center gap-2">
               <QrCode size={16} className="text-purple-400" />
-              <span className="font-bold text-white uppercase tracking-wider">EVENT TICKET SCANNER & CHECK-IN</span>
+              <span id="ticket-scanner-title" className="font-bold text-white uppercase tracking-wider">
+                EVENT TICKET SCANNER & CHECK-IN
+              </span>
             </div>
             <button
               onClick={() => {
                 playCyberClick();
+                stopCamera();
                 onClose();
               }}
               className="p-1 text-zinc-500 hover:text-white"
@@ -99,32 +221,78 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
             </button>
           </div>
 
-          {/* Scanner Optical Viewfinder Mock */}
-          <div className="mt-5 p-6 bg-zinc-900/60 border border-zinc-800 relative overflow-hidden flex flex-col items-center justify-center">
-            {/* Viewfinder crosshairs */}
-            <div className="w-48 h-48 border-2 border-dashed border-purple-400/60 relative flex items-center justify-center">
-              <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white" />
-              <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white" />
-              <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white" />
-              <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white" />
-              
-              {/* Laser Scanning Line Animation */}
-              <motion.div
-                animate={{ y: [-80, 80, -80] }}
-                transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-                className="w-full h-0.5 bg-gradient-to-r from-transparent via-purple-400 to-transparent shadow-[0_0_12px_rgba(168,85,247,0.8)]"
-              />
+          {/* Scanner Optical Viewfinder & Camera Stream */}
+          <div className="mt-5 p-4 bg-zinc-900/60 border border-zinc-800 relative overflow-hidden flex flex-col items-center justify-center">
+            {isCameraActive ? (
+              <div className="relative w-full max-w-sm aspect-video bg-black flex items-center justify-center overflow-hidden border border-purple-500/50">
+                <video
+                  ref={videoRef}
+                  playsInline
+                  autoPlay
+                  muted
+                  className="w-full h-full object-cover"
+                />
+                {/* Laser Scanning Line */}
+                <motion.div
+                  animate={{ y: [-70, 70, -70] }}
+                  transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                  className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-purple-400 to-transparent shadow-[0_0_12px_rgba(168,85,247,0.9)]"
+                />
+              </div>
+            ) : (
+              <div className="w-48 h-48 border-2 border-dashed border-purple-400/60 relative flex items-center justify-center">
+                <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white" />
+                <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white" />
+                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white" />
+                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white" />
 
-              <span className="font-mono text-[9px] text-purple-300/80 uppercase">
-                READY TO SCAN
-              </span>
+                {/* Laser Scanning Line Animation */}
+                <motion.div
+                  animate={{ y: [-80, 80, -80] }}
+                  transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+                  className="w-full h-0.5 bg-gradient-to-r from-transparent via-purple-400 to-transparent shadow-[0_0_12px_rgba(168,85,247,0.8)]"
+                />
+
+                <span className="font-mono text-[9px] text-purple-300/80 uppercase">
+                  READY TO SCAN
+                </span>
+              </div>
+            )}
+
+            {/* Camera Controls */}
+            <div className="mt-3 flex items-center gap-2">
+              {isCameraActive ? (
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="px-3 py-1.5 bg-red-950 border border-red-700 text-red-200 hover:bg-red-900 text-xs flex items-center gap-1.5 transition-colors"
+                >
+                  <CameraOff size={13} />
+                  <span>STOP CAMERA</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="px-3 py-1.5 bg-purple-950 border border-purple-600 text-purple-200 hover:bg-purple-900 text-xs flex items-center gap-1.5 transition-colors"
+                >
+                  <Camera size={13} />
+                  <span>START WEBCAM SCANNER</span>
+                </button>
+              )}
             </div>
+
+            {cameraError && (
+              <p className="text-[10px] text-amber-400 mt-2 text-center max-w-sm">
+                {cameraError}
+              </p>
+            )}
           </div>
 
           {/* Scan Input Form */}
           <form onSubmit={handleScan} className="mt-5 space-y-3">
             <label className="block text-[11px] text-zinc-400">
-              ENTER TICKET ID OR BARCODE DATA FOR CHECK-IN:
+              ENTER EXACT TICKET ID OR BARCODE NUMBER FOR CHECK-IN:
             </label>
             <div className="flex gap-2">
               <input
@@ -206,3 +374,4 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
     </AnimatePresence>
   );
 };
+export default TicketScannerModal;

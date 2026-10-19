@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GalleryItem } from '../../types';
-import { Image as ImageIcon, Plus, X, Upload } from 'lucide-react';
+import { Image as ImageIcon, Plus, X, Upload, Trash2, Maximize2, Calendar, Tag } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { useAuth } from '../../context/AuthContext';
 import { galleryService } from '../../services/galleryService';
@@ -10,6 +10,7 @@ export const GalleryView: React.FC = () => {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<GalleryItem | null>(null);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('DAILY_LAB_SESSIONS');
   const [description, setDescription] = useState('');
@@ -29,6 +30,18 @@ export const GalleryView: React.FC = () => {
     };
     loadGallery();
   }, []);
+
+  // Keyboard escape listener for Lightbox & Upload modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (selectedPhoto) setSelectedPhoto(null);
+        if (uploadModalOpen) resetUploadForm();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPhoto, uploadModalOpen]);
 
   const categories = [
     { id: 'ALL', label: 'All Photos' },
@@ -94,6 +107,27 @@ export const GalleryView: React.FC = () => {
       setDescription('');
       setImageFile(null);
       setImagePreview('');
+    }
+  };
+
+  const handleDeletePhoto = async (e: React.MouseEvent, photoId: string) => {
+    e.stopPropagation();
+    playCyberClick();
+    if (!window.confirm('Are you sure you want to remove this photo from the gallery?')) {
+      return;
+    }
+
+    try {
+      const success = await galleryService.deletePhoto(photoId);
+      if (success) {
+        setItems((prev) => prev.filter((p) => p.id !== photoId));
+        if (selectedPhoto?.id === photoId) {
+          setSelectedPhoto(null);
+        }
+        playSuccessChime();
+      }
+    } catch (err) {
+      console.error('Failed to delete photo:', err);
     }
   };
 
@@ -189,7 +223,11 @@ export const GalleryView: React.FC = () => {
           {filteredItems.map((item) => (
             <div
               key={item.id}
-              className="bg-[#0c0c12] border border-zinc-800 overflow-hidden group hover:border-zinc-500 transition-all shadow-md"
+              onClick={() => {
+                playCyberClick();
+                setSelectedPhoto(item);
+              }}
+              className="bg-[#0c0c12] border border-zinc-800 overflow-hidden group hover:border-purple-400 transition-all shadow-md cursor-pointer relative"
             >
               <div className="aspect-video w-full overflow-hidden bg-black relative">
                 <img
@@ -197,10 +235,30 @@ export const GalleryView: React.FC = () => {
                   alt={item.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <span className="absolute top-2 right-2 px-2 py-0.5 bg-black/80 text-white text-[9px] uppercase border border-zinc-700">
-                  {item.category}
+                <span className="absolute top-2 left-2 px-2 py-0.5 bg-black/80 text-white text-[9px] uppercase border border-zinc-700">
+                  {item.category.replace(/_/g, ' ')}
                 </span>
+
+                {/* Admin Delete Action */}
+                {isAdmin && (
+                  <button
+                    onClick={(e) => handleDeletePhoto(e, item.id)}
+                    className="absolute top-2 right-2 p-1.5 bg-red-950/80 border border-red-700 hover:bg-red-900 text-red-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete photo"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
+
+                {/* Hover overlay hint */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                  <div className="px-3 py-1 bg-black/80 border border-zinc-500 text-white text-[10px] uppercase font-bold flex items-center gap-1.5">
+                    <Maximize2 size={11} />
+                    <span>VIEW FULL PHOTO</span>
+                  </div>
+                </div>
               </div>
+
               <div className="p-4 space-y-1.5">
                 <div className="text-[10px] text-zinc-500">{item.date}</div>
                 <h4 className="font-syne font-bold text-base text-white">{item.title}</h4>
@@ -213,9 +271,94 @@ export const GalleryView: React.FC = () => {
         </div>
       )}
 
+      {/* Fullscreen Lightbox Modal (X4) */}
+      {selectedPhoto && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-md"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-4xl w-full bg-[#0a0a0f] border border-zinc-700 p-4 sm:p-6 space-y-4 shadow-2xl text-xs font-mono max-h-[95vh] overflow-y-auto"
+          >
+            {/* Lightbox Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-white uppercase text-sm">{selectedPhoto.title}</span>
+                <span className="px-2 py-0.5 bg-zinc-900 border border-zinc-700 text-zinc-400 text-[10px] uppercase">
+                  {selectedPhoto.category.replace(/_/g, ' ')}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedPhoto(null)}
+                className="p-1.5 border border-zinc-800 hover:border-zinc-500 text-zinc-400 hover:text-white bg-zinc-900"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Large Image View */}
+            <div className="w-full max-h-[60vh] flex items-center justify-center bg-black overflow-hidden border border-zinc-800">
+              <img
+                src={selectedPhoto.imageUrl}
+                alt={selectedPhoto.title}
+                className="w-full h-full max-h-[60vh] object-contain"
+              />
+            </div>
+
+            {/* Description & Metadata */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center gap-4 text-zinc-400 text-[11px]">
+                <div className="flex items-center gap-1.5">
+                  <Calendar size={13} className="text-purple-400" />
+                  <span>{selectedPhoto.date}</span>
+                </div>
+                {selectedPhoto.photographer && (
+                  <div>
+                    <span className="text-zinc-600">PHOTO BY: </span>
+                    <span className="text-zinc-300">{selectedPhoto.photographer}</span>
+                  </div>
+                )}
+              </div>
+              {selectedPhoto.description && (
+                <p className="text-zinc-300 text-xs leading-relaxed border-t border-zinc-900 pt-2">
+                  {selectedPhoto.description}
+                </p>
+              )}
+            </div>
+
+            {/* Lightbox Footer Actions */}
+            <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
+              {isAdmin ? (
+                <button
+                  onClick={(e) => handleDeletePhoto(e, selectedPhoto.id)}
+                  className="px-3 py-1.5 bg-red-950 border border-red-700 hover:bg-red-900 text-red-200 text-xs flex items-center gap-1.5 uppercase font-bold"
+                >
+                  <Trash2 size={13} />
+                  <span>DELETE PHOTO</span>
+                </button>
+              ) : <div />}
+
+              <button
+                onClick={() => setSelectedPhoto(null)}
+                className="px-5 py-2 bg-white text-black font-bold uppercase hover:bg-zinc-200 text-xs"
+              >
+                CLOSE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Upload Photo Modal */}
       {uploadModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        >
           <div className="max-w-md w-full bg-[#0d0d14] border border-zinc-700 p-6 space-y-4 shadow-2xl font-mono text-xs">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <span className="font-bold text-white uppercase">UPLOAD PHOTO TO GALLERY</span>
@@ -297,7 +440,7 @@ export const GalleryView: React.FC = () => {
                         CLICK TO SELECT OR DRAG & DROP AN IMAGE
                       </span>
                       <span className="text-zinc-600 text-[9px]">
-                        JPG, PNG, WEBP up to 10MB
+                        JPG, PNG, WEBP, GIF up to 10MB
                       </span>
                     </>
                   )}
@@ -305,7 +448,7 @@ export const GalleryView: React.FC = () => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];

@@ -26,9 +26,17 @@ export const GlobalLoadingScreen: React.FC<GlobalLoadingScreenProps> = ({
     }
   });
 
+  const hasBooted = (() => {
+    try {
+      return typeof window !== 'undefined' && sessionStorage.getItem('sdc_has_booted') === 'true';
+    } catch {
+      return false;
+    }
+  })();
+
   const duration = isOAuthReturn
     ? 450
-    : (typeof window !== 'undefined' && sessionStorage.getItem('sdc_has_booted') === 'true')
+    : hasBooted
     ? 600
     : minDurationMs;
 

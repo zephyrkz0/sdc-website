@@ -39,6 +39,7 @@ export const AvatarImage: React.FC<AvatarImageProps> = ({
     <img
       src={src}
       alt={alt}
+      crossOrigin="anonymous"
       className={className}
       onError={() => setHasError(true)}
     />

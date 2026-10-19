@@ -15,6 +15,16 @@ export const EmailVerificationModal: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setPendingEmailDispatch(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setPendingEmailDispatch]);
+
   if (!pendingEmailDispatch) return null;
 
   const isReset = pendingEmailDispatch.type === 'RESET_PASSWORD';
@@ -31,8 +41,8 @@ export const EmailVerificationModal: React.FC = () => {
     playCyberClick();
     setErrorMsg('');
 
-    if (!password || password.length < 4) {
-      setErrorMsg('Password must be at least 4 characters long.');
+    if (!password || password.length < 6) {
+      setErrorMsg('Password must be at least 6 characters long.');
       return;
     }
 
@@ -81,6 +91,9 @@ export const EmailVerificationModal: React.FC = () => {
 
         {/* Modal */}
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-label={isReset ? 'Password Reset Modal' : 'Email Verification Modal'}
           initial={{ scale: 0.95, opacity: 0, y: 10 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 10 }}
