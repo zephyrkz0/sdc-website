@@ -14,7 +14,7 @@ interface EventRSVPModalProps {
   eventsList: ClubEvent[];
   currentUser?: ClubMember | null;
   isAdmin?: boolean;
-  onSaveTicket: (pass: PhysicalTicketPass) => void;
+  onSaveTicket: (pass: PhysicalTicketPass) => Promise<any> | void;
   existingTickets?: PhysicalTicketPass[];
 }
 
@@ -38,6 +38,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
   const [track, setTrack] = useState<string>(currentUser?.track || 'Web Development');
   const [generatedPass, setGeneratedPass] = useState<PhysicalTicketPass | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isMinting, setIsMinting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   React.useEffect(() => {
@@ -99,7 +100,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
         { id: 'ATTENDEE', label: 'ATTENDEE' },
       ];
 
-  const handleGenerateTicket = (e: React.FormEvent) => {
+  const handleGenerateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     playCyberClick();
     setErrorMsg('');
@@ -145,10 +146,19 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
       accessSecurityCode: secCode,
     };
 
-    setGeneratedPass(newPass);
-    onSaveTicket(newPass);
-    playSuccessChime();
-    confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+    setIsMinting(true);
+    try {
+      const persisted = await onSaveTicket(newPass);
+      // STRICT: Only grant pass after confirmed database persistence
+      setGeneratedPass((persisted as PhysicalTicketPass) || newPass);
+      playSuccessChime();
+      confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+    } catch (err: any) {
+      console.error('Pass minting rejected by server:', err);
+      setErrorMsg(err?.message || 'Server Connection Error: Could not verify and record pass on server. Pass issuance aborted.');
+    } finally {
+      setIsMinting(false);
+    }
   };
 
   const handleDownloadPDF = async () => {
@@ -384,20 +394,22 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={Boolean(userExistingPass) || isAtCapacity}
+                  disabled={Boolean(userExistingPass) || isAtCapacity || isMinting}
                   className={`px-6 py-2.5 font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-                    userExistingPass || isAtCapacity
+                    userExistingPass || isAtCapacity || isMinting
                       ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
                       : 'bg-white text-black hover:bg-zinc-200 shadow-md'
                   }`}
                 >
                   <Sparkles size={14} />
                   <span>
-                    {userExistingPass
+                    {isMinting
+                      ? 'VERIFYING WITH SERVER...'
+                      : userExistingPass
                       ? 'PASS ALREADY RESERVED'
                       : isAtCapacity
                       ? 'SESSION FULL'
-                      : 'GENERATE PASS'}
+                      : 'CONFIRM RSVP & ISSUE PASS'}
                   </span>
                 </button>
               </div>

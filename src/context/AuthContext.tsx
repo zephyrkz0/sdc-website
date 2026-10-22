@@ -102,9 +102,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     try {
-      if (currentUser) {
-        localStorage.setItem(LOCAL_STORAGE_SESSION_KEY, JSON.stringify(currentUser));
+      if (!isSupabaseConfigured()) {
+        if (currentUser) {
+          localStorage.setItem(LOCAL_STORAGE_SESSION_KEY, JSON.stringify(currentUser));
+        } else {
+          localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
+        }
       } else {
+        // When Supabase is configured, data lives strictly in live Supabase storage; clear local cache
         localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
       }
     } catch {}

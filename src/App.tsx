@@ -116,7 +116,9 @@ const AppContent: React.FC = () => {
       }
 
       if (currentUser?.email) {
-        const liveTickets = await ticketService.fetchUserTickets(currentUser.email);
+        const liveTickets = isAdmin
+          ? await ticketService.fetchAllTickets()
+          : await ticketService.fetchUserTickets(currentUser.email);
         if (liveTickets && liveTickets.length > 0) {
           setTickets(liveTickets);
         }
@@ -124,7 +126,7 @@ const AppContent: React.FC = () => {
     };
 
     loadData();
-  }, [currentUser]);
+  }, [currentUser, isAdmin]);
 
   // Combine database members with current session/local state
   const combinedMembers = useMemo(() => {
@@ -223,31 +225,47 @@ const AppContent: React.FC = () => {
     setRsvpModalOpen(true);
   };
 
-  const handleOpenScanner = () => {
+  const handleOpenScanner = async () => {
     if (!isAdmin) return;
+    try {
+      const allLive = await ticketService.fetchAllTickets();
+      if (allLive && allLive.length > 0) {
+        setTickets(allLive);
+      }
+    } catch {}
     setScannerModalOpen(true);
   };
 
   const handleSaveTicket = async (newTicket: PhysicalTicketPass) => {
-    setTickets((prev) => [newTicket, ...prev]);
     try {
       const persisted = await ticketService.mintTicket(newTicket);
       if (persisted) {
-        setTickets((prev) => prev.map((t) => (t.ticketId === newTicket.ticketId ? persisted : t)));
+        setTickets((prev) => [persisted, ...prev]);
+        return persisted;
       }
+      throw new Error('Database Error: Ticket pass could not be confirmed by server.');
     } catch (err) {
-      console.warn('Failed to persist ticket to Supabase:', err);
+      console.error('Failed to persist ticket to Supabase:', err);
+      throw err;
     }
   };
 
-  const handleCheckInTicket = async (ticketId: string) => {
-    setTickets((prev) =>
-      prev.map((t) => (t.ticketId === ticketId ? { ...t, status: 'CHECKED_IN', isAdmitted: true } : t))
-    );
+  const handleCheckInTicket = async (ticketIdOrCode: string) => {
     try {
-      await ticketService.checkInTicket(ticketId);
-    } catch (err) {
+      const res = await ticketService.verifyAndAdmitPass(ticketIdOrCode);
+      if (res.success && res.ticket) {
+        setTickets((prev) => {
+          const exists = prev.some((t) => t.ticketId === res.ticket!.ticketId);
+          if (exists) {
+            return prev.map((t) => (t.ticketId === res.ticket!.ticketId ? res.ticket! : t));
+          }
+          return [res.ticket!, ...prev];
+        });
+      }
+      return res;
+    } catch (err: any) {
       console.warn('Failed to persist check-in to Supabase:', err);
+      return { success: false, message: err?.message || 'Server check-in error.' };
     }
   };
 
