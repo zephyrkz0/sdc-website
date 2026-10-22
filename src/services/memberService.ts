@@ -5,13 +5,17 @@ import { CLUB_MEMBERS } from '../data/mockData';
 const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export const mapDbMemberToClubMember = (m: any): ClubMember => {
-  const rawRole = (m.role || '').toUpperCase();
+  const rawRole = (m.role || '').toUpperCase().trim();
   const roleTier =
-    rawRole.includes('SUPER_ADMIN') || rawRole.includes('SUPER ADMIN') || rawRole.includes('MASTER_ADMIN')
+    rawRole === 'SUPER_ADMIN' || rawRole === 'SUPER ADMIN' || rawRole === 'MASTER_ADMIN'
       ? 'SUPER_ADMIN'
       : rawRole === 'ADMIN'
       ? 'ADMIN'
       : 'MEMBER';
+
+  const displayRole =
+    m.role_title ||
+    (roleTier === 'SUPER_ADMIN' ? 'Super Admin' : roleTier === 'ADMIN' ? 'Admin' : m.role || 'Member');
 
   return {
     id: m.id || `mem-${Date.now()}`,
@@ -22,8 +26,8 @@ export const mapDbMemberToClubMember = (m: any): ClubMember => {
     firstName: m.first_name || '',
     lastName: m.last_name || '',
     email: m.email || '',
-    role: m.role || 'Member',
-    roleTitle: m.role || 'Member',
+    role: displayRole,
+    roleTitle: displayRole,
     tier: roleTier,
     track: m.track || 'Web Development',
     opId: m.op_id || `SDC-${(m.id || Date.now().toString()).substring(0, 6)}`,
@@ -98,23 +102,39 @@ export const memberService = {
 
     try {
       const payload: Record<string, any> = {
-        first_name: member.firstName || member.fullName?.split(' ')[0] || 'Member',
-        last_name: member.lastName || member.fullName?.split(' ').slice(1).join(' ') || '',
-        full_name: member.fullName || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'SDC Member',
         username: cleanUsername,
         email: cleanEmail,
-        role: member.role || member.roleTitle || 'MEMBER',
-        track: member.track || 'Web Development',
-        branch: member.branch || '',
-        semester: member.semester || '',
-        avatar_url: member.avatarUrl || null,
-        bio: member.bio || '',
-        skills: member.skills || [],
-        hours_contributed: member.hoursContributed ?? 0,
-        github_url: member.githubUrl || member.github || null,
-        linkedin_url: member.linkedinUrl || member.linkedin || null,
         status: member.status || 'ACTIVE',
       };
+
+      if (member.firstName !== undefined || member.fullName !== undefined) {
+        payload.first_name = member.firstName || member.fullName?.split(' ')[0] || 'Member';
+      }
+      if (member.lastName !== undefined || member.fullName !== undefined) {
+        payload.last_name = member.lastName || member.fullName?.split(' ').slice(1).join(' ') || '';
+      }
+      if (member.fullName !== undefined || member.firstName !== undefined || member.lastName !== undefined) {
+        payload.full_name = member.fullName || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'SDC Member';
+      }
+      if (member.track !== undefined) payload.track = member.track || 'Web Development';
+      if (member.branch !== undefined) payload.branch = member.branch;
+      if (member.semester !== undefined) payload.semester = member.semester;
+      if (member.avatarUrl !== undefined) payload.avatar_url = member.avatarUrl || null;
+      if (member.bio !== undefined) payload.bio = member.bio;
+      if (member.skills !== undefined) payload.skills = member.skills;
+      if (member.hoursContributed !== undefined) payload.hours_contributed = member.hoursContributed;
+      if (member.githubUrl !== undefined || member.github !== undefined) {
+        payload.github_url = member.githubUrl || member.github || null;
+      }
+      if (member.linkedinUrl !== undefined || member.linkedin !== undefined) {
+        payload.linkedin_url = member.linkedinUrl || member.linkedin || null;
+      }
+
+      // Only write system authorization tier to `role`; never overwrite an admin's role with a display title
+      const candidateRole = (member.tier || member.role || '').toUpperCase().trim();
+      if (candidateRole === 'SUPER_ADMIN' || candidateRole === 'ADMIN' || candidateRole === 'MEMBER') {
+        payload.role = candidateRole;
+      }
 
       // Only pass UUIDs to PostgreSQL UUID columns
       if (this.isValidUUID(member.id)) {
@@ -147,7 +167,15 @@ export const memberService = {
       if (existingId) {
         res = await supabase.from('members').update(payload).eq('id', existingId).select().single();
       } else {
-        res = await supabase.from('members').insert([payload]).select().single();
+        const insertPayload = {
+          first_name: payload.first_name || 'Member',
+          last_name: payload.last_name || '',
+          full_name: payload.full_name || 'SDC Member',
+          role: payload.role || 'MEMBER',
+          track: payload.track || 'Web Development',
+          ...payload,
+        };
+        res = await supabase.from('members').insert([insertPayload]).select().single();
       }
 
       if (res.error) {

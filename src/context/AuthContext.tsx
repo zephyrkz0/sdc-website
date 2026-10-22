@@ -125,11 +125,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     let memberData: any = null;
     try {
+      const safeUserId = String(userId || '').replace(/[,().%*'"]/g, '');
+      const safeEmail = email.replace(/[,()%*'"]/g, '');
       // 1. Fetch user from members table by user_id or email
       const { data } = await supabase
         .from('members')
         .select('*')
-        .or(`user_id.eq.${userId},email.ilike.${email}`)
+        .or(`user_id.eq.${safeUserId},email.ilike.${safeEmail}`)
         .maybeSingle();
 
       memberData = data;

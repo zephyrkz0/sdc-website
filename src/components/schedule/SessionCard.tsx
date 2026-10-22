@@ -134,7 +134,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, onRSVP, onDel
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-zinc-900/50 border border-zinc-800/80 font-mono text-xs">
         <div className="flex items-center gap-2 text-zinc-300">
           <Clock size={14} className="text-purple-400 shrink-0" />
-          <span>{session.timeStart || '18:00'} - {session.timeEnd || '20:00'} EST</span>
+          <span>{session.timeStart || '17:30'} - {session.timeEnd || '19:30'} IST</span>
         </div>
 
         <div className="flex items-center gap-2 text-zinc-300">

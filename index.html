@@ -49,10 +49,10 @@
               search: search
             };
 
-            // 1. PostMessage to opener if present
+            // 1. PostMessage to opener if present (restricted to same origin)
             if (window.opener) {
               try {
-                window.opener.postMessage(payload, '*');
+                window.opener.postMessage(payload, window.location.origin);
               } catch (e) {}
             }
 

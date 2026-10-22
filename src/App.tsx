@@ -241,6 +241,11 @@ const AppContent: React.FC = () => {
       const persisted = await ticketService.mintTicket(newTicket);
       if (persisted) {
         setTickets((prev) => [persisted, ...prev]);
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === persisted.eventId ? { ...s, rsvpCount: (s.rsvpCount || 0) + 1 } : s
+          )
+        );
         return persisted;
       }
       throw new Error('Database Error: Ticket pass could not be confirmed by server.');
@@ -288,16 +293,8 @@ const AppContent: React.FC = () => {
     );
   };
 
-  const handleAddSession = async (newSession: ScheduleSession) => {
+  const handleAddSession = (newSession: ScheduleSession) => {
     setSessions((prev) => [newSession, ...prev]);
-    try {
-      const created = await eventService.createEvent(newSession);
-      if (created) {
-        setSessions((prev) => prev.map((s) => (s.id === newSession.id ? created : s)));
-      }
-    } catch (err) {
-      console.warn('Failed to save session to Supabase:', err);
-    }
   };
 
   const handleUpdateSession = (updatedSession: ScheduleSession) => {
@@ -312,6 +309,13 @@ const AppContent: React.FC = () => {
 
   const handleDeleteTicket = async (ticketId: string, eventId?: string) => {
     setTickets((prev) => prev.filter((t) => t.ticketId !== ticketId));
+    if (eventId) {
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === eventId ? { ...s, rsvpCount: Math.max(0, (s.rsvpCount || 1) - 1) } : s
+        )
+      );
+    }
     await ticketService.deleteTicket(ticketId, eventId);
   };
 
@@ -390,7 +394,7 @@ const AppContent: React.FC = () => {
           {activeTab === 'tickets' && (
             <TicketManagementView
               tickets={tickets}
-              events={events}
+              events={sessions as any}
               onOpenRSVP={handleOpenRSVP}
               onOpenScanner={handleOpenScanner}
               hasEvents={hasEvents}
@@ -405,7 +409,7 @@ const AppContent: React.FC = () => {
         isOpen={rsvpModalOpen}
         onClose={() => setRsvpModalOpen(false)}
         targetEvent={selectedEventForRSVP}
-        eventsList={events}
+        eventsList={sessions as any}
         currentUser={currentUser}
         isAdmin={isAdmin}
         existingTickets={tickets}

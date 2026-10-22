@@ -2,23 +2,15 @@
 
 @font-face {
   font-family: 'Mirano';
-  src: url('/assets/MiranoExtendedFreebie-Light.ttf') format('truetype');
+  src: url('/assets/CourbeSans.otf') format('opentype');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Mirano';
-  src: url('/assets/MiranoExtendedFreebie-LightItalic.ttf') format('truetype');
-  font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
   font-family: 'OpenBoek';
-  src: url('/assets/openboek-notregular.otf') format('opentype');
+  src: url('/assets/mathigon-notregular.woff') format('woff');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
