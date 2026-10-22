@@ -25,3 +25,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Scratch & temporary restore directories
+scratch/
+
+# Redundant root assets (Vite serves production static assets from public/assets)
+assets/
+
+# Internal context, security logs & architecture documentation
+context.md
+vulnerabilities.md
+PIPELINE_AND_CACHE_ARCHITECTURE.md
