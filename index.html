@@ -38,8 +38,7 @@
           var isPopup = Boolean(
             !isRedirect && (
               window.opener || 
-              window.name === 'sdc_oauth_popup' || 
-              (window.innerWidth > 0 && window.innerWidth < 850 && window.innerHeight < 850)
+              window.name === 'sdc_oauth_popup'
             )
           );
 
@@ -53,7 +52,7 @@
             // 1. PostMessage to opener if present
             if (window.opener) {
               try {
-                window.opener.postMessage(payload, window.location.origin);
+                window.opener.postMessage(payload, '*');
               } catch (e) {}
             }
 
