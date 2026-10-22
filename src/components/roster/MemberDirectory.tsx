@@ -140,20 +140,10 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
           id: existingMember?.id || userId,
           email: userEmail,
           username,
+          tier: targetRole,
           role: targetPosition,
           roleTitle: targetPosition,
         });
-      }
-
-      try {
-        await memberService.createOrUpdateMember({
-          userId,
-          username,
-          email: userEmail,
-          role: targetPosition,
-        });
-      } catch (err) {
-        console.warn('Sync to Supabase note:', err);
       }
     }
   };
@@ -334,14 +324,16 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
 
         {/* Sort & View Mode & CSV Export */}
         <div className="flex flex-wrap items-center gap-3 font-mono text-xs shrink-0">
-          <button
-            onClick={handleExportCSV}
-            className="px-3 py-1.5 bg-[#121218] border border-zinc-800 hover:border-zinc-500 text-zinc-300 hover:text-white text-xs font-bold uppercase flex items-center gap-1.5 transition-colors"
-            title="Download Member Roster as CSV"
-          >
-            <Download size={13} />
-            <span className="hidden sm:inline">EXPORT</span> CSV
-          </button>
+          {isAdmin && (
+            <button
+              onClick={handleExportCSV}
+              className="px-3 py-1.5 bg-[#121218] border border-zinc-800 hover:border-zinc-500 text-zinc-300 hover:text-white text-xs font-bold uppercase flex items-center gap-1.5 transition-colors"
+              title="Download Member Roster as CSV (Admin Only)"
+            >
+              <Download size={13} />
+              <span className="hidden sm:inline">EXPORT</span> CSV
+            </button>
+          )}
 
           <div className="flex items-center gap-1.5">
             <span className="text-zinc-500 text-[10px]">SORT:</span>

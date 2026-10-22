@@ -43,11 +43,16 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
 
   React.useEffect(() => {
     if (isOpen) {
+      setGeneratedPass(null);
       setAttendeeName(currentUser?.fullName || '');
       setAttendeeCallsign(currentUser?.callsign || currentUser?.username || '');
       setAttendeeEmail(currentUser?.email || '');
       if (currentUser?.track) setTrack(currentUser.track);
-      if (targetEvent?.id) setSelectedEventId(targetEvent.id);
+      if (targetEvent?.id) {
+        setSelectedEventId(targetEvent.id);
+      } else if (eventsList[0]?.id) {
+        setSelectedEventId(eventsList[0].id);
+      }
       setErrorMsg('');
 
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -58,7 +63,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
     }
-  }, [isOpen, currentUser, targetEvent, onClose]);
+  }, [isOpen, currentUser, targetEvent, eventsList, onClose]);
 
   if (!isOpen) return null;
 
@@ -66,7 +71,7 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
 
   const currentEvent =
     eventsList.find((e) => e.id === selectedEventId) ||
-    (targetEvent && 'venueCoords' in targetEvent ? targetEvent : null) ||
+    targetEvent ||
     eventsList[0];
 
   const userExistingPass = React.useMemo(() => {
@@ -120,12 +125,19 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
     const barcode = `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`;
     const secCode = `AUTH-${Math.random().toString(36).substring(2, 7).toUpperCase()}-SEC`;
 
+    const resolvedEventTime =
+      currentEvent && 'timeStart' in currentEvent && (currentEvent as any).timeStart
+        ? `${(currentEvent as any).timeStart}${(currentEvent as any).timeEnd ? ` - ${(currentEvent as any).timeEnd}` : ''}`
+        : currentEvent && 'time' in currentEvent && (currentEvent as any).time
+        ? (currentEvent as any).time
+        : '17:30 - 19:30';
+
     const newPass: PhysicalTicketPass = {
       ticketId: ticketSerial,
-      eventId: currentEvent?.id || 'evt-01',
+      eventId: currentEvent?.id || targetEvent?.id || 'evt-01',
       eventTitle: currentEvent?.title || (targetEvent ? targetEvent.title : 'SDC Session'),
       eventDate: currentEvent?.date || (targetEvent ? targetEvent.date : '2026-09-18'),
-      eventTime: 'time' in (currentEvent || {}) ? (currentEvent as any).time : '17:30 - 19:30',
+      eventTime: resolvedEventTime,
       eventLocation: currentEvent?.location || (targetEvent ? (targetEvent as any).location || (targetEvent as any).venue : 'CUCEK Computer Lab') || 'CUCEK Computer Lab',
       attendeeName: attendeeName || currentUser?.fullName || 'Member',
       attendeeCallsign: attendeeCallsign || currentUser?.callsign || currentUser?.username || 'member',

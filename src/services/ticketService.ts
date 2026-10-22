@@ -282,14 +282,20 @@ export const ticketService = {
     let targetTicketId = clean;
     try {
       const parsed = JSON.parse(clean);
-      if (parsed.tkt) targetTicketId = parsed.tkt;
+      if (parsed.tkt) targetTicketId = String(parsed.tkt);
     } catch {}
+
+    // Sanitize reserved PostgREST delimiters to prevent .or() filter injection
+    const safeTicketId = targetTicketId.replace(/[,().%*'"]/g, '').trim();
+    if (!safeTicketId) {
+      return { success: false, message: 'Invalid ticket pass identifier format.' };
+    }
 
     try {
       const { data: matched, error: findErr } = await supabase
         .from('tickets')
         .select('*')
-        .or(`ticket_id.eq.${targetTicketId},qr_payload.ilike.%${targetTicketId}%`)
+        .or(`ticket_id.eq.${safeTicketId},qr_payload.ilike.%${safeTicketId}%`)
         .maybeSingle();
 
       if (findErr || !matched) {

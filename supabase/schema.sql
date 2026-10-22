@@ -169,12 +169,15 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- ==========================================================
 -- 8. STORAGE BUCKETS (Avatars & Gallery Uploads)
 -- ==========================================================
-INSERT INTO storage.buckets (id, name, public)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES 
-    ('avatars', 'avatars', true),
-    ('club-assets', 'club-assets', true),
-    ('gallery-uploads', 'gallery-uploads', true)
-ON CONFLICT (id) DO NOTHING;
+    ('avatars', 'avatars', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+    ('club-assets', 'club-assets', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+    ('gallery-uploads', 'gallery-uploads', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+ON CONFLICT (id) DO UPDATE SET
+    public = EXCLUDED.public,
+    file_size_limit = EXCLUDED.file_size_limit,
+    allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 -- Storage Security Policies
 DROP POLICY IF EXISTS "Public Read Avatars" ON storage.objects;
@@ -210,23 +213,23 @@ ALTER TABLE public.past_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gallery_items ENABLE ROW LEVEL SECURITY;
 
--- Trigger to prevent non-admins from escalating roles on INSERT or UPDATE
+-- Trigger to prevent non-admins from escalating roles or falsifying hours_contributed
 CREATE OR REPLACE FUNCTION public.prevent_unauthorized_role_change()
 RETURNS TRIGGER 
 SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    -- On insert, if caller is not an admin, force role to 'MEMBER'
+    -- On insert, if caller is not an admin, force role to 'MEMBER' and hours to 0
     IF NOT public.is_admin() THEN
       NEW.role := 'MEMBER';
+      NEW.hours_contributed := 0;
     END IF;
   ELSIF TG_OP = 'UPDATE' THEN
-    IF (OLD.role IS DISTINCT FROM NEW.role) THEN
-      IF NOT public.is_admin() THEN
-        -- Retain existing role if caller is not an admin
-        NEW.role := OLD.role;
-      END IF;
+    IF NOT public.is_admin() THEN
+      -- Retain existing role and hours_contributed if caller is not an admin
+      NEW.role := OLD.role;
+      NEW.hours_contributed := OLD.hours_contributed;
     END IF;
   END IF;
   RETURN NEW;
@@ -345,7 +348,43 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Increment RSVP count when a new pass is generated
+-- Prevent duplicate tickets per user per event & enforce event capacity on ticket insert
+DO $$
+BEGIN
+  ALTER TABLE public.tickets ADD CONSTRAINT unique_ticket_per_user_event UNIQUE (event_id, user_email);
+EXCEPTION
+  WHEN OTHERS THEN NULL;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.enforce_ticket_capacity()
+RETURNS TRIGGER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  curr_count INTEGER;
+  max_cap INTEGER;
+BEGIN
+  IF NEW.event_id IS NOT NULL THEN
+    SELECT rsvp_count, max_capacity INTO curr_count, max_cap
+    FROM public.events
+    WHERE id = NEW.event_id
+    FOR UPDATE;
+
+    IF max_cap IS NOT NULL AND max_cap > 0 AND curr_count >= max_cap THEN
+      RAISE EXCEPTION 'Event has reached maximum capacity.';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_enforce_ticket_capacity ON public.tickets;
+CREATE TRIGGER trg_enforce_ticket_capacity
+BEFORE INSERT ON public.tickets
+FOR EACH ROW
+EXECUTE FUNCTION public.enforce_ticket_capacity();
+
+-- Recompute exact RSVP count from actual tickets row count (prevents arbitrary RPC spoofing)
 CREATE OR REPLACE FUNCTION public.increment_rsvp(event_id UUID)
 RETURNS VOID 
 SET search_path = public, pg_temp
@@ -355,12 +394,16 @@ BEGIN
     RAISE EXCEPTION 'Authentication required to RSVP.';
   END IF;
   UPDATE public.events
-  SET rsvp_count = rsvp_count + 1
-  WHERE id = event_id;
+  SET rsvp_count = (
+    SELECT COUNT(*)::INTEGER
+    FROM public.tickets t
+    WHERE t.event_id = increment_rsvp.event_id
+  )
+  WHERE id = increment_rsvp.event_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Decrement RSVP count when a pass is cancelled (floor at 0)
+-- Recompute exact RSVP count on cancellation
 CREATE OR REPLACE FUNCTION public.decrement_rsvp(event_id UUID)
 RETURNS VOID 
 SET search_path = public, pg_temp
@@ -370,8 +413,12 @@ BEGIN
     RAISE EXCEPTION 'Authentication required to cancel RSVP.';
   END IF;
   UPDATE public.events
-  SET rsvp_count = GREATEST(rsvp_count - 1, 0)
-  WHERE id = event_id;
+  SET rsvp_count = (
+    SELECT COUNT(*)::INTEGER
+    FROM public.tickets t
+    WHERE t.event_id = decrement_rsvp.event_id
+  )
+  WHERE id = decrement_rsvp.event_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
