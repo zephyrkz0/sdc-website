@@ -146,7 +146,28 @@ CREATE TABLE IF NOT EXISTS public.gallery_items (
 );
 
 -- ==========================================================
--- 7. STORAGE BUCKETS (Avatars & Gallery Uploads)
+-- 7. SECURITY FUNCTIONS (is_admin helper)
+-- Must be declared before storage and table RLS policies
+-- ==========================================================
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN 
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1 FROM public.members
+    WHERE user_id = auth.uid()
+      AND UPPER(role) IN ('ADMIN', 'SUPER_ADMIN', 'MASTER_ADMIN')
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ==========================================================
+-- 8. STORAGE BUCKETS (Avatars & Gallery Uploads)
 -- ==========================================================
 INSERT INTO storage.buckets (id, name, public)
 VALUES 
@@ -181,27 +202,13 @@ CREATE POLICY "Allow Upload Gallery" ON storage.objects FOR INSERT WITH CHECK (
 );
 
 -- ==========================================================
--- 8. ROW LEVEL SECURITY (RLS) POLICIES & SECURITY FUNCTIONS
+-- 9. ROW LEVEL SECURITY (RLS) POLICIES & SECURITY TRIGGERS
 -- ==========================================================
 ALTER TABLE public.members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.past_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gallery_items ENABLE ROW LEVEL SECURITY;
-
--- Helper function to verify admin authority strictly
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN 
-SET search_path = public, pg_temp
-AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM public.members
-    WHERE user_id = auth.uid()
-      AND UPPER(role) IN ('ADMIN', 'SUPER_ADMIN', 'MASTER_ADMIN')
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger to prevent non-admins from escalating roles on INSERT or UPDATE
 CREATE OR REPLACE FUNCTION public.prevent_unauthorized_role_change()
