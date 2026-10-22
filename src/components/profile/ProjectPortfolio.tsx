@@ -114,7 +114,7 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
                   <a
                     href={proj.repoUrl}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="flex items-center gap-1 text-xs text-zinc-300 hover:text-white"
                   >
                     <GithubIcon size={12} />
@@ -125,7 +125,7 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
                   <a
                     href={proj.demoUrl}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300"
                   >
                     <ExternalLink size={12} />

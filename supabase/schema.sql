@@ -382,7 +382,7 @@ BEGIN
   END IF;
 
   DELETE FROM public.members WHERE user_id = current_user_id;
-  DELETE FROM public.tickets WHERE user_id = current_user_id::text;
+  DELETE FROM public.tickets WHERE user_id = current_user_id::text OR user_email = (SELECT email FROM auth.users WHERE id = current_user_id);
   DELETE FROM auth.users WHERE id = current_user_id;
 
   RETURN TRUE;

@@ -166,6 +166,7 @@ export interface PhysicalTicketPass {
   isAdmitted?: boolean;
   admittedAt?: string;
   venue?: string;
+  userId?: string;
   userName?: string;
   username?: string;
   userEmail?: string;

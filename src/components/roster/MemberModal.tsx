@@ -384,28 +384,38 @@ export const MemberModal: React.FC<MemberModalProps> = ({ member, onClose, onUpd
             {/* Social / External Links */}
             <div className="mt-8 pt-4 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
               <div className="flex items-center gap-3">
-                {member.githubUrl || member.github ? (
-                  <a
-                    href={member.githubUrl || member.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-white text-zinc-200 flex items-center gap-1.5 transition-colors"
-                  >
-                    <GithubIcon size={14} />
-                    <span>GitHub</span>
-                  </a>
-                ) : null}
-                {member.linkedinUrl || member.linkedin ? (
-                  <a
-                    href={member.linkedinUrl || member.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-white text-zinc-200 flex items-center gap-1.5 transition-colors"
-                  >
-                    <LinkedinIcon size={14} />
-                    <span>LinkedIn</span>
-                  </a>
-                ) : null}
+                {(() => {
+                  const rawGit = member.githubUrl || member.github;
+                  const safeGit = rawGit ? (rawGit.startsWith('http://') || rawGit.startsWith('https://') ? rawGit : `https://${rawGit}`) : null;
+                  if (!safeGit || (!safeGit.startsWith('http://') && !safeGit.startsWith('https://'))) return null;
+                  return (
+                    <a
+                      href={safeGit}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-white text-zinc-200 flex items-center gap-1.5 transition-colors"
+                    >
+                      <GithubIcon size={14} />
+                      <span>GitHub</span>
+                    </a>
+                  );
+                })()}
+                {(() => {
+                  const rawIn = member.linkedinUrl || member.linkedin;
+                  const safeIn = rawIn ? (rawIn.startsWith('http://') || rawIn.startsWith('https://') ? rawIn : `https://${rawIn}`) : null;
+                  if (!safeIn || (!safeIn.startsWith('http://') && !safeIn.startsWith('https://'))) return null;
+                  return (
+                    <a
+                      href={safeIn}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-white text-zinc-200 flex items-center gap-1.5 transition-colors"
+                    >
+                      <LinkedinIcon size={14} />
+                      <span>LinkedIn</span>
+                    </a>
+                  );
+                })()}
               </div>
 
               <button

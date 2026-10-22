@@ -9,7 +9,7 @@ interface TicketScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
   tickets: PhysicalTicketPass[];
-  onCheckIn: (ticketId: string) => void;
+  onCheckIn: (ticketIdOrCode: string) => Promise<{ success: boolean; message: string; ticket?: PhysicalTicketPass } | void> | void;
 }
 
 export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
@@ -21,6 +21,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
   const [scanInput, setScanInput] = useState('');
   const [scannedResult, setScannedResult] = useState<PhysicalTicketPass | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState('');
   
@@ -98,7 +99,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
             if (detected && detected.length > 0) {
               const rawValue = detected[0].rawValue;
               if (rawValue) {
-                checkAndAdmitTicket(rawValue);
+                await checkAndAdmitTicket(rawValue);
                 stopCamera();
               }
             }
@@ -112,13 +113,13 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
     }
   };
 
-  const checkAndAdmitTicket = (input: string) => {
+  const checkAndAdmitTicket = async (input: string) => {
     const clean = input.trim();
     if (!clean) return;
 
     const upper = clean.toUpperCase();
 
-    // Strict validation: Require exact match on ticketId, barcode, security code, or parsed QR payload
+    // Strict validation: Check against known passes or verify with server
     const matched = tickets.find((t) => {
       // 1. Exact match on ticketId
       if (t.ticketId.toUpperCase() === upper) return true;
@@ -149,28 +150,54 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
       return false;
     });
 
-    if (matched) {
+    if (matched && matched.isAdmitted) {
+      playCyberClick();
+      setErrorMsg(`DUPLICATE ENTRY ALERT: Pass [${matched.ticketId}] has already been admitted!`);
       setScannedResult(matched);
-      onCheckIn(matched.ticketId);
+      return;
+    }
+
+    setIsVerifying(true);
+    setErrorMsg('');
+
+    try {
+      const ticketIdToSubmit = matched ? matched.ticketId : clean;
+      const res = await onCheckIn(ticketIdToSubmit);
+
+      if (res && !res.success) {
+        playCyberClick();
+        setErrorMsg(res.message || 'Pass admission rejected by server.');
+        if (res.ticket) {
+          setScannedResult(res.ticket);
+        }
+        return;
+      }
+
+      const confirmed = res?.ticket || matched;
+      if (confirmed) {
+        setScannedResult(confirmed);
+      }
       playSuccessChime();
       confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
       setErrorMsg('');
-    } else {
+    } catch (err: any) {
       playCyberClick();
-      setErrorMsg(`No valid ticket found matching exact identifier [${clean}].`);
+      setErrorMsg(err?.message || 'Server error verifying pass.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
-  const handleScan = (e: React.FormEvent) => {
+  const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setScannedResult(null);
-    checkAndAdmitTicket(scanInput);
+    await checkAndAdmitTicket(scanInput);
   };
 
-  const handleQuickTestScan = (ticket: PhysicalTicketPass) => {
+  const handleQuickTestScan = async (ticket: PhysicalTicketPass) => {
     setScanInput(ticket.ticketId);
-    checkAndAdmitTicket(ticket.ticketId);
+    await checkAndAdmitTicket(ticket.ticketId);
   };
 
   if (!isOpen) return null;
@@ -304,9 +331,10 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
               />
               <button
                 type="submit"
-                className="px-5 py-2 bg-white text-black font-bold text-xs uppercase hover:bg-zinc-200"
+                disabled={isVerifying}
+                className="px-5 py-2 bg-white text-black font-bold text-xs uppercase hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                CHECK IN
+                {isVerifying ? 'VERIFYING...' : 'CHECK IN'}
               </button>
             </div>
           </form>
