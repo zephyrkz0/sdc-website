@@ -17,7 +17,7 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
   ];
 
   return (
-    <footer className="border-t border-zinc-800 bg-[#06060a] text-zinc-400 font-mono text-xs relative z-20">
+    <footer className="border-t border-zinc-800 bg-[#06060a] text-zinc-400 font-mono text-xs relative z-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
           {/* Left Column: Mission */}
@@ -64,7 +64,7 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
               <span>2026</span>
             </div>
             <pre className="text-[9px] leading-tight text-zinc-400 font-mono overflow-x-auto py-1">
-{` . ::: .    . ::: .   +-----------------------------+
+              {` . ::: .    . ::: .   +-----------------------------+
 :::::::::::::::::::::  | MADE FOR SDC WITH LOVE      |
 :::::::::::::::::::::  | BY SDC MEMBERS              |
  ':::::::::::::::::'   | CUCEK CAMPUS                |

@@ -6,9 +6,13 @@ import { User, Sparkles, Code2, Globe, Cpu, BrainCircuit, ArrowRight, Upload, X,
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { memberService } from '../../services/memberService';
 import { AvatarImage } from '../common/AvatarImage';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 export const OnboardingModal: React.FC = () => {
   const { currentUser, updateUserProfile } = useAuth();
+
+  const isVisible = Boolean(currentUser && !currentUser.hasCompletedOnboarding);
+  useScrollLock(isVisible);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -153,12 +157,13 @@ export const OnboardingModal: React.FC = () => {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 10000,
+        zIndex: 100000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
         overflow: 'hidden',
+        overscrollBehavior: 'contain',
       }}
     >
       {/* Backdrop */}

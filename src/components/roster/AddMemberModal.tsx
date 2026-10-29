@@ -5,6 +5,7 @@ import { X, Upload, User, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { memberService } from '../../services/memberService';
 import { AvatarImage } from '../common/AvatarImage';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -34,18 +35,18 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  useScrollLock(isOpen);
+
   React.useEffect(() => {
-    if (isOpen) {
-      const prevBodyOverflow = document.body.style.overflow;
-      const prevHtmlOverflow = document.documentElement.style.overflow;
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = prevBodyOverflow;
-        document.documentElement.style.overflow = prevHtmlOverflow;
-      };
-    }
-  }, [isOpen]);
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -128,12 +129,13 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 10000,
+        zIndex: 100000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
         overflow: 'hidden',
+        overscrollBehavior: 'contain',
       }}
     >
       {/* Solid Backdrop */}
@@ -183,218 +185,218 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
             <div className="w-2 h-2 bg-purple-400 rounded-none animate-pulse" />
             <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
               ADD NEW MEMBER TO DIRECTORY
-              </h3>
+            </h3>
+          </div>
+          <button
+            onClick={() => {
+              playCyberClick();
+              onClose();
+            }}
+            className="p-1.5 text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-500 bg-zinc-900 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-xs font-mono">
+          {/* Avatar Upload */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] text-zinc-400 uppercase tracking-wider">PROFILE PHOTO</label>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-zinc-900 border border-zinc-700 overflow-hidden flex items-center justify-center relative shrink-0">
+                <AvatarImage
+                  src={avatarUrl}
+                  alt="Preview"
+                  fallbackText={firstName?.[0] || 'U'}
+                  className="w-full h-full object-cover"
+                  fallbackClassName="font-syne font-bold text-xl text-zinc-400 uppercase"
+                />
+              </div>
+              <div className="flex-1 space-y-2">
+                <label className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-zinc-500 cursor-pointer transition-colors text-xs">
+                  <Upload size={13} />
+                  <span>CHOOSE FILE TO UPLOAD</span>
+                  <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                </label>
+              </div>
             </div>
+          </div>
+
+          {/* Names & Username */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-400 uppercase">FIRST NAME *</label>
+              <input
+                type="text"
+                required
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-400 uppercase">LAST NAME *</label>
+              <input
+                type="text"
+                required
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-400 uppercase">USERNAME (HANDLE) *</label>
+              <div className="relative">
+                <span className="absolute left-3 top-2 text-zinc-500 text-xs">@</span>
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 pl-7 pr-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-400 uppercase">EMAIL ADDRESS *</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+              />
+            </div>
+          </div>
+
+          {/* Role & Track */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-400 uppercase">ROLE TITLE</label>
+              <input
+                type="text"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-400 uppercase">TRACK FOCUS</label>
+              <input
+                type="text"
+                value={track}
+                onChange={(e) => setTrack(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+              />
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div className="space-y-1">
+            <label className="text-[10px] text-zinc-400 uppercase">BIO / ABOUT</label>
+            <textarea
+              rows={2}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500 text-xs"
+            />
+          </div>
+
+          {/* Skills & Hours */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-400 uppercase">SKILLS (COMMA SEPARATED)</label>
+              <input
+                type="text"
+                value={skills}
+                onChange={(e) => setSkills(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-400 uppercase">HOURS CONTRIBUTED</label>
+              <input
+                type="number"
+                min="0"
+                value={hoursContributed}
+                onChange={(e) => setHoursContributed(parseInt(e.target.value) || 0)}
+                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+              />
+            </div>
+          </div>
+
+          {/* Socials & Status */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-400 uppercase">GITHUB URL</label>
+              <input
+                type="url"
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-400 uppercase">LINKEDIN URL</label>
+              <input
+                type="url"
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-zinc-400 uppercase">STATUS</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as any)}
+                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+              >
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="DEPLOYED">DEPLOYED</option>
+                <option value="STANDBY">STANDBY</option>
+              </select>
+            </div>
+          </div>
+
+          {errorMsg && (
+            <div className="p-2.5 bg-red-950/60 border border-red-800/80 text-[11px] text-red-300">
+              {errorMsg}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
             <button
+              type="button"
               onClick={() => {
                 playCyberClick();
                 onClose();
               }}
-              className="p-1.5 text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-500 bg-zinc-900 transition-colors"
+              className="px-4 py-2 border border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white transition-colors"
             >
-              <X size={16} />
+              CANCEL
+            </button>
+
+            <button
+              type="submit"
+              disabled={isUploading}
+              className="px-5 py-2 bg-white text-black font-bold text-xs uppercase tracking-wider border border-white hover:bg-zinc-200 transition-all flex items-center gap-2"
+            >
+              <Sparkles size={13} />
+              <span>{isUploading ? 'ADDING MEMBER...' : 'ADD MEMBER'}</span>
             </button>
           </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-xs font-mono">
-            {/* Avatar Upload */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] text-zinc-400 uppercase tracking-wider">PROFILE PHOTO</label>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-zinc-900 border border-zinc-700 overflow-hidden flex items-center justify-center relative shrink-0">
-                  <AvatarImage
-                    src={avatarUrl}
-                    alt="Preview"
-                    fallbackText={firstName?.[0] || 'U'}
-                    className="w-full h-full object-cover"
-                    fallbackClassName="font-syne font-bold text-xl text-zinc-400 uppercase"
-                  />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <label className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 hover:border-zinc-500 cursor-pointer transition-colors text-xs">
-                    <Upload size={13} />
-                    <span>CHOOSE FILE TO UPLOAD</span>
-                    <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Names & Username */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase">FIRST NAME *</label>
-                <input
-                  type="text"
-                  required
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase">LAST NAME *</label>
-                <input
-                  type="text"
-                  required
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase">USERNAME (HANDLE) *</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-zinc-500 text-xs">@</span>
-                  <input
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 pl-7 pr-3 py-2 text-white focus:outline-none focus:border-zinc-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase">EMAIL ADDRESS *</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-            </div>
-
-            {/* Role & Track */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase">ROLE TITLE</label>
-                <input
-                  type="text"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase">TRACK FOCUS</label>
-                <input
-                  type="text"
-                  value={track}
-                  onChange={(e) => setTrack(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-            </div>
-
-            {/* Bio */}
-            <div className="space-y-1">
-              <label className="text-[10px] text-zinc-400 uppercase">BIO / ABOUT</label>
-              <textarea
-                rows={2}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500 text-xs"
-              />
-            </div>
-
-            {/* Skills & Hours */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase">SKILLS (COMMA SEPARATED)</label>
-                <input
-                  type="text"
-                  value={skills}
-                  onChange={(e) => setSkills(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase">HOURS CONTRIBUTED</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={hoursContributed}
-                  onChange={(e) => setHoursContributed(parseInt(e.target.value) || 0)}
-                  className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-            </div>
-
-            {/* Socials & Status */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase">GITHUB URL</label>
-                <input
-                  type="url"
-                  value={githubUrl}
-                  onChange={(e) => setGithubUrl(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase">LINKEDIN URL</label>
-                <input
-                  type="url"
-                  value={linkedinUrl}
-                  onChange={(e) => setLinkedinUrl(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase">STATUS</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
-                >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="DEPLOYED">DEPLOYED</option>
-                  <option value="STANDBY">STANDBY</option>
-                </select>
-              </div>
-            </div>
-
-            {errorMsg && (
-              <div className="p-2.5 bg-red-950/60 border border-red-800/80 text-[11px] text-red-300">
-                {errorMsg}
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
-              <button
-                type="button"
-                onClick={() => {
-                  playCyberClick();
-                  onClose();
-                }}
-                className="px-4 py-2 border border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white transition-colors"
-              >
-                CANCEL
-              </button>
-
-              <button
-                type="submit"
-                disabled={isUploading}
-                className="px-5 py-2 bg-white text-black font-bold text-xs uppercase tracking-wider border border-white hover:bg-zinc-200 transition-all flex items-center gap-2"
-              >
-                <Sparkles size={13} />
-                <span>{isUploading ? 'ADDING MEMBER...' : 'ADD MEMBER'}</span>
-              </button>
-            </div>
-          </form>
-        </div>
+        </form>
       </div>
-    );
+    </div>
+  );
 
   return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

@@ -9,6 +9,7 @@ import { getRoleTier, getRoleStyles } from '../../utils/roleUtils';
 import { AvatarImage } from '../common/AvatarImage';
 import { useAuth } from '../../context/AuthContext';
 import { memberService } from '../../services/memberService';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface MemberModalProps {
   member: ClubMember | null;
@@ -29,6 +30,8 @@ export const MemberModal: React.FC<MemberModalProps> = ({ member, onClose, onUpd
   const [linkedinUrl, setLinkedinUrl] = useState(member?.linkedinUrl || member?.linkedin || '');
   const [isSaving, setIsSaving] = useState(false);
 
+  useScrollLock(Boolean(member));
+
   useEffect(() => {
     if (member) {
       setBio(member.bio || '');
@@ -40,10 +43,6 @@ export const MemberModal: React.FC<MemberModalProps> = ({ member, onClose, onUpd
       setLinkedinUrl(member.linkedinUrl || member.linkedin || '');
       setIsEditing(false);
 
-      const prevBodyOverflow = document.body.style.overflow;
-      const prevHtmlOverflow = document.documentElement.style.overflow;
-      document.body.style.overflow = 'hidden';
-
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           onClose();
@@ -52,8 +51,6 @@ export const MemberModal: React.FC<MemberModalProps> = ({ member, onClose, onUpd
       window.addEventListener('keydown', handleKeyDown);
 
       return () => {
-        document.body.style.overflow = prevBodyOverflow;
-        document.documentElement.style.overflow = prevHtmlOverflow;
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
@@ -63,10 +60,10 @@ export const MemberModal: React.FC<MemberModalProps> = ({ member, onClose, onUpd
 
   const canEdit = Boolean(
     isAdmin ||
-      (currentUser &&
-        (currentUser.id === member.id ||
-          currentUser.email === member.email ||
-          currentUser.username === member.username))
+    (currentUser &&
+      (currentUser.id === member.id ||
+        currentUser.email === member.email ||
+        currentUser.username === member.username))
   );
 
   const name = member.fullName || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Member';
@@ -130,12 +127,13 @@ export const MemberModal: React.FC<MemberModalProps> = ({ member, onClose, onUpd
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 10000,
+        zIndex: 100000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
         overflow: 'hidden',
+        overscrollBehavior: 'contain',
       }}
     >
       {/* 100% Solid Dark Backdrop */}

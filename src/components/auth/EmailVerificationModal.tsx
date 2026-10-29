@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { Mail, CheckCircle2, Lock, X } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 export const EmailVerificationModal: React.FC = () => {
   const { pendingEmailDispatch, setPendingEmailDispatch, verifyEmailAndSetPassword, resetPassword } = useAuth();
@@ -14,6 +16,9 @@ export const EmailVerificationModal: React.FC = () => {
   const [callsign, setCallsign] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isVisible = Boolean(pendingEmailDispatch);
+  useScrollLock(isVisible);
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -77,114 +82,116 @@ export const EmailVerificationModal: React.FC = () => {
     }, 300);
   };
 
-  return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setPendingEmailDispatch(null)}
-          className="fixed inset-0 bg-black/80 backdrop-blur-md"
-        />
+  return typeof document !== 'undefined'
+    ? createPortal(
+      <AnimatePresence>
+        <div className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto" style={{ zIndex: 100000, overscrollBehavior: 'contain' }}>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setPendingEmailDispatch(null)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
+          />
 
-        {/* Modal */}
-        <motion.div
-          role="dialog"
-          aria-modal="true"
-          aria-label={isReset ? 'Password Reset Modal' : 'Email Verification Modal'}
-          initial={{ scale: 0.95, opacity: 0, y: 10 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 10 }}
-          className="relative z-10 w-full max-w-md bg-[#09090b] border border-zinc-700 p-6 shadow-2xl text-zinc-100 font-mono text-xs"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-            <div className="flex items-center gap-2 font-bold text-white uppercase">
-              <Mail size={15} className="text-purple-400" />
-              <span>{isReset ? 'PASSWORD RESET' : 'EMAIL VERIFICATION'}</span>
-            </div>
-            <button
-              onClick={() => {
-                playCyberClick();
-                setPendingEmailDispatch(null);
-              }}
-              className="p-1 text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-500 bg-zinc-900 transition-colors"
-            >
-              <X size={14} />
-            </button>
-          </div>
-
-          {step === 'VIEW_EMAIL' ? (
-            <div className="mt-4 space-y-4">
-              <p className="text-zinc-300">
-                A verification link was sent to:
-              </p>
-              <div className="p-3 bg-black border border-zinc-800 text-white font-bold break-all">
-                {pendingEmailDispatch.toEmail}
+          {/* Modal */}
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label={isReset ? 'Password Reset Modal' : 'Email Verification Modal'}
+            initial={{ scale: 0.95, opacity: 0, y: 10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 10 }}
+            className="relative z-10 w-full max-w-md bg-[#09090b] border border-zinc-700 p-6 shadow-2xl text-zinc-100 font-mono text-xs"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+              <div className="flex items-center gap-2 font-bold text-white uppercase">
+                <Mail size={15} className="text-purple-400" />
+                <span>{isReset ? 'PASSWORD RESET' : 'EMAIL VERIFICATION'}</span>
               </div>
+              <button
+                onClick={() => {
+                  playCyberClick();
+                  setPendingEmailDispatch(null);
+                }}
+                className="p-1 text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-500 bg-zinc-900 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            </div>
 
-              <div className="p-4 bg-zinc-900 border border-purple-500/40 space-y-3">
-                <div className="text-[10px] text-zinc-400">
-                  SIMULATED EMAIL INBOX
+            {step === 'VIEW_EMAIL' ? (
+              <div className="mt-4 space-y-4">
+                <p className="text-zinc-300">
+                  A verification link was sent to:
+                </p>
+                <div className="p-3 bg-black border border-zinc-800 text-white font-bold break-all">
+                  {pendingEmailDispatch.toEmail}
                 </div>
-                <div className="text-sm font-bold text-white">
-                  Skill Development Club — {isReset ? 'Reset Your Password' : 'Confirm Your Email'}
+
+                <div className="p-4 bg-zinc-900 border border-purple-500/40 space-y-3">
+                  <div className="text-[10px] text-zinc-400">
+                    SIMULATED EMAIL INBOX
+                  </div>
+                  <div className="text-sm font-bold text-white">
+                    Skill Development Club — {isReset ? 'Reset Your Password' : 'Confirm Your Email'}
+                  </div>
+                  <button
+                    onClick={handleAuthorizeLinkClick}
+                    className="w-full py-2.5 bg-white text-black font-bold uppercase tracking-wider hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 size={14} />
+                    <span>CLICK TO VERIFY & SET PASSWORD</span>
+                  </button>
                 </div>
+              </div>
+            ) : (
+              <form onSubmit={handleFinalSubmit} className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-zinc-400 text-[10px] mb-1">NEW PASSWORD</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-400 text-[10px] mb-1">CONFIRM PASSWORD</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+
+                {errorMsg && (
+                  <div className="p-2 bg-red-950/50 border border-red-500 text-red-300 text-[10px]">
+                    {errorMsg}
+                  </div>
+                )}
+
                 <button
-                  onClick={handleAuthorizeLinkClick}
+                  type="submit"
+                  disabled={isSubmitting}
                   className="w-full py-2.5 bg-white text-black font-bold uppercase tracking-wider hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
                 >
-                  <CheckCircle2 size={14} />
-                  <span>CLICK TO VERIFY & SET PASSWORD</span>
+                  <Lock size={13} />
+                  <span>{isSubmitting ? 'SAVING...' : 'CONFIRM & SIGN IN'}</span>
                 </button>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleFinalSubmit} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-zinc-400 text-[10px] mb-1">NEW PASSWORD</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-zinc-400 text-[10px] mb-1">CONFIRM PASSWORD</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-3 py-2 bg-black border border-zinc-800 text-white focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-
-              {errorMsg && (
-                <div className="p-2 bg-red-950/50 border border-red-500 text-red-300 text-[10px]">
-                  {errorMsg}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-2.5 bg-white text-black font-bold uppercase tracking-wider hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
-              >
-                <Lock size={13} />
-                <span>{isSubmitting ? 'SAVING...' : 'CONFIRM & SIGN IN'}</span>
-              </button>
-            </form>
-          )}
-        </motion.div>
-      </div>
-    </AnimatePresence>
-  );
+              </form>
+            )}
+          </motion.div>
+        </div>
+      </AnimatePresence>,
+      document.body,
+    ) : null;
 };
 
 export default EmailVerificationModal;

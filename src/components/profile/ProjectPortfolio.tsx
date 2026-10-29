@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ProjectPortfolioItem, DomainTrack } from '../../types';
 import { Plus, ExternalLink, Terminal, Sparkles, X } from 'lucide-react';
 import { GithubIcon } from '../common/Icons';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import confetti from 'canvas-confetti';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface ProjectPortfolioProps {
   projects: ProjectPortfolioItem[];
@@ -21,6 +23,8 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
   const [tagsInput, setTagsInput] = useState('');
   const [repoUrl, setRepoUrl] = useState('');
   const [demoUrl, setDemoUrl] = useState('');
+
+  useScrollLock(modalOpen);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,14 +143,23 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
       </div>
 
       {/* Submit Project Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {modalOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          data-lenis-prevent="true"
+          style={{ zIndex: 100000, overscrollBehavior: 'contain' }}
+          className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto"
+        >
           <div
             onClick={() => setModalOpen(false)}
             className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
 
-          <div className="relative w-full max-w-lg bg-zinc-950 border border-zinc-700 p-6 z-10 tech-corner-box shadow-2xl font-mono">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-lg bg-zinc-950 border border-zinc-700 p-6 z-10 tech-corner-box shadow-2xl font-mono max-h-[90vh] overflow-y-auto"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800 text-xs text-zinc-400">
               <span className="text-white font-bold uppercase tracking-wider">ADD NEW PROJECT</span>
               <button
@@ -243,7 +256,8 @@ export const ProjectPortfolio: React.FC<ProjectPortfolioProps> = ({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

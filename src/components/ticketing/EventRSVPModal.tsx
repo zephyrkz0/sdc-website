@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Download, Printer, CheckCircle2, Ticket, Shield, Calendar, MapPin, QrCode } from 'lucide-react';
 import { ClubEvent, ScheduleSession, PhysicalTicketPass, DomainTrack, ClubMember } from '../../types';
@@ -6,6 +7,7 @@ import { PhysicalPass } from './PhysicalPass';
 import { exportPassToPDF, exportPassToPNG } from './PassExporter';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import confetti from 'canvas-confetti';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface EventRSVPModalProps {
   isOpen: boolean;
@@ -40,6 +42,8 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
   const [isExporting, setIsExporting] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  useScrollLock(isOpen);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -95,15 +99,15 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
   // Seat tier options filtered by role — non-admins only see MEMBER & ATTENDEE
   const seatTierOptions = isAdmin
     ? [
-        { id: 'MEMBER', label: 'MEMBER' },
-        { id: 'CORE_TEAM', label: 'CORE TEAM' },
-        { id: 'SPEAKER', label: 'SPEAKER' },
-        { id: 'ATTENDEE', label: 'ATTENDEE' },
-      ]
+      { id: 'MEMBER', label: 'MEMBER' },
+      { id: 'CORE_TEAM', label: 'CORE TEAM' },
+      { id: 'SPEAKER', label: 'SPEAKER' },
+      { id: 'ATTENDEE', label: 'ATTENDEE' },
+    ]
     : [
-        { id: 'MEMBER', label: 'MEMBER' },
-        { id: 'ATTENDEE', label: 'ATTENDEE' },
-      ];
+      { id: 'MEMBER', label: 'MEMBER' },
+      { id: 'ATTENDEE', label: 'ATTENDEE' },
+    ];
 
   const handleGenerateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,8 +133,8 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
       currentEvent && 'timeStart' in currentEvent && (currentEvent as any).timeStart
         ? `${(currentEvent as any).timeStart}${(currentEvent as any).timeEnd ? ` - ${(currentEvent as any).timeEnd}` : ''}`
         : currentEvent && 'time' in currentEvent && (currentEvent as any).time
-        ? (currentEvent as any).time
-        : '17:30 - 19:30';
+          ? (currentEvent as any).time
+          : '17:30 - 19:30';
 
     const newPass: PhysicalTicketPass = {
       ticketId: ticketSerial,
@@ -201,9 +205,9 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
     }
   };
 
-  return (
+  const modalContent = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 flex items-center justify-center p-4 sm:p-6 overflow-y-auto" style={{ zIndex: 100000, overscrollBehavior: 'contain' }}>
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -292,11 +296,10 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
                       key={tier.id}
                       type="button"
                       onClick={() => setSeatTier(tier.id as PhysicalTicketPass['seatTier'])}
-                      className={`p-2 border text-center text-[10px] uppercase font-bold transition-all ${
-                        seatTier === tier.id
-                          ? 'bg-zinc-200 text-black border-white'
-                          : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
-                      }`}
+                      className={`p-2 border text-center text-[10px] uppercase font-bold transition-all ${seatTier === tier.id
+                        ? 'bg-zinc-200 text-black border-white'
+                        : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                        }`}
                     >
                       {tier.label}
                     </button>
@@ -339,11 +342,10 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
                     readOnly={Boolean(currentUser?.email)}
                     value={currentUser?.email || attendeeEmail}
                     onChange={(e) => setAttendeeEmail(e.target.value)}
-                    className={`w-full p-2 font-mono text-xs focus:outline-none ${
-                      currentUser?.email
-                        ? 'bg-zinc-900/60 border border-zinc-700/60 text-zinc-400 cursor-not-allowed'
-                        : 'bg-zinc-900 border border-zinc-800 text-white focus:border-zinc-500'
-                    }`}
+                    className={`w-full p-2 font-mono text-xs focus:outline-none ${currentUser?.email
+                      ? 'bg-zinc-900/60 border border-zinc-700/60 text-zinc-400 cursor-not-allowed'
+                      : 'bg-zinc-900 border border-zinc-800 text-white focus:border-zinc-500'
+                      }`}
                   />
                 </div>
                 <div>
@@ -407,21 +409,20 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
                 <button
                   type="submit"
                   disabled={Boolean(userExistingPass) || isAtCapacity || isMinting}
-                  className={`px-6 py-2.5 font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-                    userExistingPass || isAtCapacity || isMinting
-                      ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
-                      : 'bg-white text-black hover:bg-zinc-200 shadow-md'
-                  }`}
+                  className={`px-6 py-2.5 font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${userExistingPass || isAtCapacity || isMinting
+                    ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
+                    : 'bg-white text-black hover:bg-zinc-200 shadow-md'
+                    }`}
                 >
                   <Sparkles size={14} />
                   <span>
                     {isMinting
                       ? 'VERIFYING WITH SERVER...'
                       : userExistingPass
-                      ? 'PASS ALREADY RESERVED'
-                      : isAtCapacity
-                      ? 'SESSION FULL'
-                      : 'CONFIRM RSVP & ISSUE PASS'}
+                        ? 'PASS ALREADY RESERVED'
+                        : isAtCapacity
+                          ? 'SESSION FULL'
+                          : 'CONFIRM RSVP & ISSUE PASS'}
                   </span>
                 </button>
               </div>
@@ -488,4 +489,6 @@ export const EventRSVPModal: React.FC<EventRSVPModalProps> = ({
       </div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

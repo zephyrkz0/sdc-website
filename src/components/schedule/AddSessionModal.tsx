@@ -4,6 +4,7 @@ import { ScheduleSession, SessionType, EventDifficultyTrack } from '../../types'
 import { X, Calendar, Clock, MapPin, User, Sparkles, BookOpen } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { eventService } from '../../services/eventService';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface AddSessionModalProps {
   isOpen: boolean;
@@ -89,13 +90,10 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
     }
   }, [isOpen, sessionToEdit]);
 
+  useScrollLock(isOpen);
+
   useEffect(() => {
     if (isOpen) {
-      const prevBodyOverflow = document.body.style.overflow;
-      const prevHtmlOverflow = document.documentElement.style.overflow;
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           onClose();
@@ -104,8 +102,6 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
       window.addEventListener('keydown', handleKeyDown);
 
       return () => {
-        document.body.style.overflow = prevBodyOverflow;
-        document.documentElement.style.overflow = prevHtmlOverflow;
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
@@ -226,12 +222,13 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 10000,
+        zIndex: 100000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
         overflow: 'hidden',
+        overscrollBehavior: 'contain',
       }}
     >
       {/* Solid Backdrop */}
@@ -480,11 +477,10 @@ export const AddSessionModal: React.FC<AddSessionModalProps> = ({
                       key={num}
                       type="button"
                       onClick={() => setMaxCapacity(num)}
-                      className={`px-2 py-1 text-[9px] border font-mono transition-colors ${
-                        Number(maxCapacity) === num
-                          ? 'bg-purple-900/60 border-purple-500 text-purple-200 font-bold'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
-                      }`}
+                      className={`px-2 py-1 text-[9px] border font-mono transition-colors ${Number(maxCapacity) === num
+                        ? 'bg-purple-900/60 border-purple-500 text-purple-200 font-bold'
+                        : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                        }`}
                       title={`Set capacity to ${num} attendees`}
                     >
                       {num}

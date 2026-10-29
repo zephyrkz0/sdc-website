@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, QrCode, CheckCircle2, AlertTriangle, Camera, CameraOff, Video } from 'lucide-react';
 import { PhysicalTicketPass } from '../../types';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import confetti from 'canvas-confetti';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface TicketScannerModalProps {
   isOpen: boolean;
@@ -24,10 +26,12 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
   const [isVerifying, setIsVerifying] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState('');
-  
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<number | null>(null);
+
+  useScrollLock(isOpen);
 
   // Stop camera stream safely
   const stopCamera = () => {
@@ -103,7 +107,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
                 stopCamera();
               }
             }
-          } catch {}
+          } catch { }
         }, 400);
       }
     } catch (err: any) {
@@ -138,14 +142,14 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
           if (parsed.tkt && parsed.tkt.toUpperCase() === upper) return true;
           if (parsed.sec && parsed.sec.toUpperCase() === upper) return true;
         }
-      } catch {}
+      } catch { }
 
       // 5. Scanned input is JSON payload
       try {
         const inputParsed = JSON.parse(clean);
         if (inputParsed.tkt && t.ticketId.toUpperCase() === inputParsed.tkt.toUpperCase()) return true;
         if (inputParsed.sec && t.accessSecurityCode && t.accessSecurityCode.toUpperCase() === inputParsed.sec.toUpperCase()) return true;
-      } catch {}
+      } catch { }
 
       return false;
     });
@@ -202,9 +206,9 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto" style={{ zIndex: 100000, overscrollBehavior: 'contain' }}>
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -401,5 +405,7 @@ export const TicketScannerModal: React.FC<TicketScannerModalProps> = ({
       </div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };
 export default TicketScannerModal;

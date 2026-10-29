@@ -97,7 +97,23 @@ const AppContent: React.FC = () => {
 
     requestAnimationFrame(raf);
 
+    // Pause/resume Lenis when modals lock scroll
+    const handleScrollLock = (e: Event) => {
+      const { locked, scrollY } = (e as CustomEvent).detail;
+      if (locked) {
+        lenis.stop();
+      } else {
+        lenis.start();
+        if (typeof scrollY === 'number') {
+          lenis.scrollTo(scrollY, { immediate: true });
+        }
+      }
+    };
+
+    window.addEventListener('sdc-scroll-lock', handleScrollLock);
+
     return () => {
+      window.removeEventListener('sdc-scroll-lock', handleScrollLock);
       lenis.destroy();
     };
   }, []);
@@ -232,7 +248,7 @@ const AppContent: React.FC = () => {
       if (allLive && allLive.length > 0) {
         setTickets(allLive);
       }
-    } catch {}
+    } catch { }
     setScannerModalOpen(true);
   };
 

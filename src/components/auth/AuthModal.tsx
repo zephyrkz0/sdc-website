@@ -4,9 +4,12 @@ import { useAuth } from '../../context/AuthContext';
 import { X, Eye, EyeOff, Mail, Lock, User, ArrowLeft, CheckCircle2, AlertCircle, KeyRound, Loader2 } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { motion } from 'framer-motion';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 export const AuthModal: React.FC = () => {
   const { authModalOpen, setAuthModalOpen, signIn, signUp, sendPasswordReset, resetPassword, loginWithGoogle } = useAuth();
+
+  useScrollLock(authModalOpen);
 
   const [mode, setMode] = useState<'SIGN_IN' | 'SIGN_UP' | 'FORGOT_PASSWORD' | 'SET_NEW_PASSWORD'>('SIGN_IN');
   const [email, setEmail] = useState('');
@@ -214,12 +217,13 @@ export const AuthModal: React.FC = () => {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 10000,
+        zIndex: 100000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
         overflow: 'hidden',
+        overscrollBehavior: 'contain',
       }}
     >
       {/* Backdrop */}
@@ -280,10 +284,10 @@ export const AuthModal: React.FC = () => {
               {mode === 'SIGN_IN'
                 ? 'MEMBER SIGN IN'
                 : mode === 'SIGN_UP'
-                ? 'MEMBER REGISTRATION'
-                : mode === 'FORGOT_PASSWORD'
-                ? 'RESET PASSWORD'
-                : 'SET NEW PASSWORD'}
+                  ? 'MEMBER REGISTRATION'
+                  : mode === 'FORGOT_PASSWORD'
+                    ? 'RESET PASSWORD'
+                    : 'SET NEW PASSWORD'}
             </span>
           </div>
           <button
@@ -338,19 +342,19 @@ export const AuthModal: React.FC = () => {
                 {googleStatus === 'SUCCESS'
                   ? 'Signed in successfully'
                   : googleStatus === 'VERIFYING_SESSION'
-                  ? 'Verifying account'
-                  : googleStatus === 'REDIRECTING'
-                  ? 'Connecting to Google'
-                  : 'Signing in with Google'}
+                    ? 'Verifying account'
+                    : googleStatus === 'REDIRECTING'
+                      ? 'Connecting to Google'
+                      : 'Signing in with Google'}
               </h3>
               <p className="text-xs text-zinc-400 max-w-xs mx-auto leading-normal">
                 {googleStatus === 'SUCCESS'
                   ? 'Taking you to your dashboard...'
                   : googleStatus === 'VERIFYING_SESSION'
-                  ? 'Setting up your session, please wait a moment...'
-                  : googleStatus === 'REDIRECTING'
-                  ? 'Redirecting to Google sign-in...'
-                  : 'Please complete the sign-in in the Google pop-up window.'}
+                    ? 'Setting up your session, please wait a moment...'
+                    : googleStatus === 'REDIRECTING'
+                      ? 'Redirecting to Google sign-in...'
+                      : 'Please complete the sign-in in the Google pop-up window.'}
               </p>
             </div>
 
@@ -382,267 +386,265 @@ export const AuthModal: React.FC = () => {
             {/* Mode Switcher Tabs (Sign In vs Register) */}
             {isStandardAuth && (
               <div className="grid grid-cols-2 gap-1 mt-4 p-1 bg-zinc-950 border border-zinc-800 text-xs font-mono">
-            <button
-              type="button"
-              onClick={() => handleModeSwitch('SIGN_IN')}
-              className={`py-1.5 font-bold uppercase transition-all ${
-                mode === 'SIGN_IN'
-                  ? 'bg-white text-black shadow'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              SIGN IN
-            </button>
-            <button
-              type="button"
-              onClick={() => handleModeSwitch('SIGN_UP')}
-              className={`py-1.5 font-bold uppercase transition-all ${
-                mode === 'SIGN_UP'
-                  ? 'bg-white text-black shadow'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              REGISTER
-            </button>
-          </div>
-        )}
-
-        {/* Google 1-Click Auth (Only on Sign-In and Sign-Up) */}
-        {isStandardAuth && (
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={handleGoogleAuth}
-              disabled={isLoading}
-              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white text-xs font-bold flex items-center justify-center gap-2.5 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer font-mono"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"
-                />
-              </svg>
-              <span>CONTINUE WITH GOOGLE</span>
-            </button>
-
-            <div className="flex items-center gap-3 my-3 text-[10px] text-zinc-500 uppercase font-mono">
-              <div className="h-[1px] bg-zinc-800 flex-1" />
-              <span>OR EMAIL</span>
-              <div className="h-[1px] bg-zinc-800 flex-1" />
-            </div>
-          </div>
-        )}
-
-        {/* Forgot Password Subtitle */}
-        {mode === 'FORGOT_PASSWORD' && (
-          <div className="my-4 text-xs font-mono text-zinc-400">
-            Enter your registered email address to receive a secure password reset link.
-          </div>
-        )}
-
-        {/* Set New Password Subtitle */}
-        {mode === 'SET_NEW_PASSWORD' && (
-          <div className="my-4 text-xs font-mono text-zinc-400">
-            Create a new secure password for <span className="text-white font-bold">{email || 'your account'}</span>.
-          </div>
-        )}
-
-        {/* Main Form */}
-        <form onSubmit={handleSubmit} className="space-y-3 text-xs font-mono">
-          {mode === 'SIGN_UP' && (
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
-                  <User size={11} className="text-purple-400" />
-                  <span>USERNAME HANDLE</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-zinc-500 text-xs">@</span>
-                  <input
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                    placeholder="username"
-                    className="w-full bg-zinc-950 border border-zinc-800 pl-7 pr-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-zinc-400 uppercase font-bold">FIRST NAME</label>
-                  <input
-                    type="text"
-                    required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-zinc-400 uppercase font-bold">LAST NAME</label>
-                  <input
-                    type="text"
-                    required
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Email Address (Shown on SIGN_IN, SIGN_UP, and FORGOT_PASSWORD) */}
-          {mode !== 'SET_NEW_PASSWORD' && (
-            <div className="space-y-1">
-              <label className="text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
-                <Mail size={11} className="text-purple-400" />
-                <span>EMAIL ADDRESS</span>
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
-              />
-            </div>
-          )}
-
-          {/* Password for SIGN_IN and SIGN_UP */}
-          {isStandardAuth && (
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <label className="text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
-                  <Lock size={11} className="text-purple-400" />
-                  <span>PASSWORD</span>
-                </label>
-                {mode === 'SIGN_IN' && (
-                  <button
-                    type="button"
-                    onClick={() => handleModeSwitch('FORGOT_PASSWORD')}
-                    className="text-[9px] text-purple-400 hover:text-purple-300 underline font-bold"
-                  >
-                    FORGOT PASSWORD?
-                  </button>
-                )}
-              </div>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-zinc-950 border border-zinc-800 pl-3 pr-10 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
-                />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2.5 top-2 text-zinc-400 hover:text-white transition-colors"
-                  title={showPassword ? 'Hide password' : 'Show password'}
+                  onClick={() => handleModeSwitch('SIGN_IN')}
+                  className={`py-1.5 font-bold uppercase transition-all ${mode === 'SIGN_IN'
+                      ? 'bg-white text-black shadow'
+                      : 'text-zinc-400 hover:text-white'
+                    }`}
                 >
-                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  SIGN IN
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch('SIGN_UP')}
+                  className={`py-1.5 font-bold uppercase transition-all ${mode === 'SIGN_UP'
+                      ? 'bg-white text-black shadow'
+                      : 'text-zinc-400 hover:text-white'
+                    }`}
+                >
+                  REGISTER
                 </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* New Password fields for SET_NEW_PASSWORD mode */}
-          {mode === 'SET_NEW_PASSWORD' && (
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
-                  <KeyRound size={11} className="text-purple-400" />
-                  <span>NEW PASSWORD</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter new password (min 6 chars)"
-                    className="w-full bg-zinc-950 border border-zinc-800 pl-3 pr-10 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-2 text-zinc-400 hover:text-white transition-colors"
-                    title={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </button>
+            {/* Google 1-Click Auth (Only on Sign-In and Sign-Up) */}
+            {isStandardAuth && (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={handleGoogleAuth}
+                  disabled={isLoading}
+                  className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white text-xs font-bold flex items-center justify-center gap-2.5 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer font-mono"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path
+                      fill="#EA4335"
+                      d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"
+                    />
+                    <path
+                      fill="#4285F4"
+                      d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"
+                    />
+                  </svg>
+                  <span>CONTINUE WITH GOOGLE</span>
+                </button>
+
+                <div className="flex items-center gap-3 my-3 text-[10px] text-zinc-500 uppercase font-mono">
+                  <div className="h-[1px] bg-zinc-800 flex-1" />
+                  <span>OR EMAIL</span>
+                  <div className="h-[1px] bg-zinc-800 flex-1" />
                 </div>
               </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
-                  <Lock size={11} className="text-purple-400" />
-                  <span>CONFIRM NEW PASSWORD</span>
-                </label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repeat new password"
-                  className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
-                />
-              </div>
-            </div>
-          )}
-
-          {errorMsg && (
-            <div className="p-2.5 bg-red-950/80 border border-red-700 text-[11px] text-red-200 flex items-start gap-2">
-              <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {infoMsg && (
-            <div className="p-2.5 bg-emerald-950/80 border border-emerald-700 text-[11px] text-emerald-200 space-y-2">
-              <div className="flex items-start gap-2">
-                <CheckCircle2 size={14} className="text-emerald-400 shrink-0 mt-0.5" />
-                <span>{infoMsg}</span>
-              </div>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-2.5 bg-white text-black font-bold text-xs uppercase tracking-wider border border-white hover:bg-zinc-200 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2 font-mono shadow-[0_0_15px_rgba(255,255,255,0.2)] disabled:opacity-50"
-          >
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                <span>PROCESSING...</span>
-              </div>
-            ) : mode === 'SIGN_IN' ? (
-              <span>SIGN IN</span>
-            ) : mode === 'SIGN_UP' ? (
-              <span>CREATE ACCOUNT</span>
-            ) : mode === 'FORGOT_PASSWORD' ? (
-              <span>SEND RESET LINK</span>
-            ) : (
-              <span>UPDATE PASSWORD & LOGIN</span>
             )}
-          </button>
+
+            {/* Forgot Password Subtitle */}
+            {mode === 'FORGOT_PASSWORD' && (
+              <div className="my-4 text-xs font-mono text-zinc-400">
+                Enter your registered email address to receive a secure password reset link.
+              </div>
+            )}
+
+            {/* Set New Password Subtitle */}
+            {mode === 'SET_NEW_PASSWORD' && (
+              <div className="my-4 text-xs font-mono text-zinc-400">
+                Create a new secure password for <span className="text-white font-bold">{email || 'your account'}</span>.
+              </div>
+            )}
+
+            {/* Main Form */}
+            <form onSubmit={handleSubmit} className="space-y-3 text-xs font-mono">
+              {mode === 'SIGN_UP' && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
+                      <User size={11} className="text-purple-400" />
+                      <span>USERNAME HANDLE</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-zinc-500 text-xs">@</span>
+                      <input
+                        type="text"
+                        required
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                        placeholder="username"
+                        className="w-full bg-zinc-950 border border-zinc-800 pl-7 pr-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-zinc-400 uppercase font-bold">FIRST NAME</label>
+                      <input
+                        type="text"
+                        required
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-zinc-400 uppercase font-bold">LAST NAME</label>
+                      <input
+                        type="text"
+                        required
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Email Address (Shown on SIGN_IN, SIGN_UP, and FORGOT_PASSWORD) */}
+              {mode !== 'SET_NEW_PASSWORD' && (
+                <div className="space-y-1">
+                  <label className="text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
+                    <Mail size={11} className="text-purple-400" />
+                    <span>EMAIL ADDRESS</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
+                  />
+                </div>
+              )}
+
+              {/* Password for SIGN_IN and SIGN_UP */}
+              {isStandardAuth && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
+                      <Lock size={11} className="text-purple-400" />
+                      <span>PASSWORD</span>
+                    </label>
+                    {mode === 'SIGN_IN' && (
+                      <button
+                        type="button"
+                        onClick={() => handleModeSwitch('FORGOT_PASSWORD')}
+                        className="text-[9px] text-purple-400 hover:text-purple-300 underline font-bold"
+                      >
+                        FORGOT PASSWORD?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-zinc-950 border border-zinc-800 pl-3 pr-10 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-2 text-zinc-400 hover:text-white transition-colors"
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* New Password fields for SET_NEW_PASSWORD mode */}
+              {mode === 'SET_NEW_PASSWORD' && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
+                      <KeyRound size={11} className="text-purple-400" />
+                      <span>NEW PASSWORD</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter new password (min 6 chars)"
+                        className="w-full bg-zinc-950 border border-zinc-800 pl-3 pr-10 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2.5 top-2 text-zinc-400 hover:text-white transition-colors"
+                        title={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-zinc-400 uppercase font-bold flex items-center gap-1">
+                      <Lock size={11} className="text-purple-400" />
+                      <span>CONFIRM NEW PASSWORD</span>
+                    </label>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Repeat new password"
+                      className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {errorMsg && (
+                <div className="p-2.5 bg-red-950/80 border border-red-700 text-[11px] text-red-200 flex items-start gap-2">
+                  <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
+              {infoMsg && (
+                <div className="p-2.5 bg-emerald-950/80 border border-emerald-700 text-[11px] text-emerald-200 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+                    <span>{infoMsg}</span>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-2.5 bg-white text-black font-bold text-xs uppercase tracking-wider border border-white hover:bg-zinc-200 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2 font-mono shadow-[0_0_15px_rgba(255,255,255,0.2)] disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <span>PROCESSING...</span>
+                  </div>
+                ) : mode === 'SIGN_IN' ? (
+                  <span>SIGN IN</span>
+                ) : mode === 'SIGN_UP' ? (
+                  <span>CREATE ACCOUNT</span>
+                ) : mode === 'FORGOT_PASSWORD' ? (
+                  <span>SEND RESET LINK</span>
+                ) : (
+                  <span>UPDATE PASSWORD & LOGIN</span>
+                )}
+              </button>
 
               {!isStandardAuth && (
                 <button

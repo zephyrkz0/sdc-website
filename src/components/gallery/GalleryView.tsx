@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { GalleryItem } from '../../types';
 import { Image as ImageIcon, Plus, X, Upload, Trash2, Maximize2, Calendar, Tag } from 'lucide-react';
 import { playCyberClick, playSuccessChime } from '../common/AudioEffects';
 import { useAuth } from '../../context/AuthContext';
 import { galleryService } from '../../services/galleryService';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 export const GalleryView: React.FC = () => {
   const { isAdmin } = useAuth();
@@ -19,6 +21,8 @@ export const GalleryView: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useScrollLock(Boolean(uploadModalOpen || selectedPhoto));
 
   // Load gallery items from Supabase on mount
   useEffect(() => {
@@ -162,11 +166,10 @@ export const GalleryView: React.FC = () => {
                 playCyberClick();
                 setActiveCategory(c.id);
               }}
-              className={`px-3 py-1.5 font-bold uppercase transition-all ${
-                activeCategory === c.id
-                  ? 'bg-white text-black'
-                  : 'bg-[#121218] text-zinc-400 hover:text-white border border-zinc-800'
-              }`}
+              className={`px-3 py-1.5 font-bold uppercase transition-all ${activeCategory === c.id
+                ? 'bg-white text-black'
+                : 'bg-[#121218] text-zinc-400 hover:text-white border border-zinc-800'
+                }`}
             >
               {c.label}
             </button>
@@ -272,15 +275,18 @@ export const GalleryView: React.FC = () => {
       )}
 
       {/* Fullscreen Lightbox Modal (X4) */}
-      {selectedPhoto && (
+      {selectedPhoto && typeof document !== 'undefined' && createPortal(
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-md"
+          data-lenis-prevent="true"
+          style={{ zIndex: 100000, overscrollBehavior: 'contain' }}
+          className="fixed inset-0 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-md overflow-y-auto"
           onClick={() => setSelectedPhoto(null)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
+            style={{ overscrollBehavior: 'contain' }}
             className="relative max-w-4xl w-full bg-[#0a0a0f] border border-zinc-700 p-4 sm:p-6 space-y-4 shadow-2xl text-xs font-mono max-h-[95vh] overflow-y-auto"
           >
             {/* Lightbox Header */}
@@ -349,17 +355,27 @@ export const GalleryView: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Upload Photo Modal */}
-      {uploadModalOpen && (
+      {uploadModalOpen && typeof document !== 'undefined' && createPortal(
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          data-lenis-prevent="true"
+          style={{ zIndex: 100000, overscrollBehavior: 'contain' }}
+          className="fixed inset-0 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) resetUploadForm();
+          }}
         >
-          <div className="max-w-md w-full bg-[#0d0d14] border border-zinc-700 p-6 space-y-4 shadow-2xl font-mono text-xs">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ overscrollBehavior: 'contain' }}
+            className="max-w-md w-full bg-[#0d0d14] border border-zinc-700 p-6 space-y-4 shadow-2xl font-mono text-xs max-h-[90vh] overflow-y-auto"
+          >
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <span className="font-bold text-white uppercase">UPLOAD PHOTO TO GALLERY</span>
               <button onClick={resetUploadForm} className="text-zinc-500 hover:text-white">
@@ -402,13 +418,12 @@ export const GalleryView: React.FC = () => {
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`w-full border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center gap-2 p-4 ${
-                    isDragging
-                      ? 'border-purple-400 bg-purple-950/20'
-                      : imagePreview
+                  className={`w-full border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center gap-2 p-4 ${isDragging
+                    ? 'border-purple-400 bg-purple-950/20'
+                    : imagePreview
                       ? 'border-zinc-600 bg-black'
                       : 'border-zinc-700 bg-black hover:border-zinc-500'
-                  }`}
+                    }`}
                 >
                   {imagePreview ? (
                     <div className="relative w-full">
@@ -492,7 +507,8 @@ export const GalleryView: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
